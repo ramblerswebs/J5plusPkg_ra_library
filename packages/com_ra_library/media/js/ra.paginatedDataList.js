@@ -271,7 +271,7 @@ ra.paginatedTable = function (tag, userOptions = null) {
                 var td = tr.childNodes[col];
 
                 if (typeof (td) !== "undefined") {
-                    var value = td.innerHTML;
+                    var value = td.innerText;
                     if (value !== '') {
                         cols.splice(col, 1);
                         break;
