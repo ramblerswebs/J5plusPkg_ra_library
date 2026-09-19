@@ -156,6 +156,7 @@ ra._leafletmap = function (tag, copyrightTag, options) {
     }
     this.map = new L.Map(this._mapDiv, mapOptions);
     this.mapLayers = new Object();
+    this.overlayLayers = new Object(); // optional layers drawn over the basemap (checkbox, not radio, in the layers control)
     // map types
     this.mapLayers["Open Street Map"] = new L.TileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         referrerPolicy: 'strict-origin-when-cross-origin',
@@ -264,6 +265,22 @@ ra._leafletmap = function (tag, copyrightTag, options) {
         });
     }
 
+    // Footpath / PRoW network overlay (OS NGD API - Features: trn-rami-highwaydedication-1).
+    // Requires footpath-network-layer.js (defines L.RA.FootpathNetworkLayer) to be loaded
+    // before this file, and the OSkey's OS Data Hub project to have the
+    // "OS NGD API - Features" product enabled (separate from OS Maps/Vector Tile API).
+    // This is an OVERLAY, not a base layer, so it goes into overlayLayers, not mapLayers -
+    // otherwise selecting it in the layers control would replace the basemap instead of
+    // drawing on top of it.
+    if (options.licenseKeys.OSMNGD !== null && L.RA && L.RA.FootpathNetworkLayer) {
+        this.overlayLayers["Footpath Network (OS NGD)"] = new L.RA.FootpathNetworkLayer({
+            apiKey: options.licenseKeys.OSMNGD,
+            minZoom: 13,
+            onlyPublicRightOfWay: true,
+            attribution: 'Highway dedication (indicative PRoW) &copy; Ordnance Survey'
+        });
+    }
+
 // get my location for directions
     this.map.locate();
     this.map.on('locationerror', function () {
@@ -338,7 +355,7 @@ ra._leafletmap = function (tag, copyrightTag, options) {
             }
         });
     }
-// bottom left controls 
+// bottom left controls
     if (options.mouseposition !== null && ra.hasMouse()) {
         this.controls.mouse = L.control.mouse().addTo(this.map);
         this.controls.mouse.addSearch(this.controls.search);
@@ -377,7 +394,7 @@ ra._leafletmap = function (tag, copyrightTag, options) {
     }
 
 // top right controls
-    this.controls.layers = L.control.layers(this.mapLayers).addTo(this.map);
+    this.controls.layers = L.control.layers(this.mapLayers, this.overlayLayers).addTo(this.map);
     if (options.topoMapDefault) {
         this.map.addLayer(this.mapLayers["Open Topo Map"]);
     } else {

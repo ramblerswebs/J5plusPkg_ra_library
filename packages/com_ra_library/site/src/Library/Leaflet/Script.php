@@ -110,7 +110,9 @@ class Script {
         Load::addStyleSheet($path . "MarkerCluster.css");
         Load::addScript($path . "leaflet.markercluster.js");
         Load::addScript("media/com_ra_library/js/vendors/Leaflet.FeatureGroup.SubGroup-1.0.2/src/subgroup.js");
-        // subGroup used by Places.js
+        Load::addScript("media/com_ra_library/js/leaflet/L.RA.FootpathNetworkLayer.js");
+
+// subGroup used by Places.js
         Load::addScript("media/com_ra_library/js/leaflet/L.Control.Places.js");
         Load::addScript("media/com_ra_library/js/leaflet/L.Control.Mouse.js");
         Load::addStyleSheet("media/com_ra_library/js/leaflet/L.Control.Mouse.css");
