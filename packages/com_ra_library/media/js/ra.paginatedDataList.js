@@ -255,79 +255,86 @@ ra.paginatedTable = function (tag, userOptions = null) {
         return div;
     };
     this._hideBlankColumns = function (table) {
-        var cols = [];
-        var thead = table.childNodes[0];
-        var tbody = table.childNodes[1];
-        var nodeList = thead.childNodes[0].childNodes;
-        for (let i = 0; i < nodeList.length; i++) {
-            cols.push(i);
-        }
-        var trs = tbody.childNodes;
-        var len = cols.length;
-        for (let j = 0; j < len; j++) {
-            var col = len - j - 1;
-            for (let i = 0; i < trs.length; i++) {
-                var tr = trs[i];
-                var td = tr.childNodes[col];
+        var thead = table.tHead || table.childNodes[0];
+        var tbody = table.tBody || table.childNodes[1];
 
-                if (typeof (td) !== "undefined") {
-                    var value = td.innerText;
-                    if (value !== '') {
-                        cols.splice(col, 1);
-                        break;
-                    }
+        var headerRow = thead.rows[0];
+        var headerCells = headerRow.cells;
+        var colCount = headerCells.length;
+
+        var trs = tbody.rows;
+        var colsToHide = [];
+
+        // For each logical column, check if all cells are blank
+        for (var col = 0; col < colCount; col++) {
+            var allBlank = true;
+
+            for (var r = 0; r < trs.length; r++) {
+                var tr = trs[r];
+                var tds = tr.cells;
+
+                if (col >= tds.length) {
+                    // Row doesn't have this column; treat as blank for this row
+                    continue;
                 }
+
+                var td = tds[col];
+                var value = (td.innerText || td.textContent || '').trim();
+
+                if (value !== '') {
+                    allBlank = false;
+                    break;
+                }
+            }
+
+            if (allBlank) {
+                colsToHide.push(col);
             }
         }
 
-        this.resetColumnDisplay(this.elements.table);
-        this._removeColumns(cols);
+        // Reset previous state, then hide the blank columns
+        this.resetColumnDisplay(table);
+        this._hideColumns(colsToHide);
     };
+
+    this._hideColumns = function (cols) {
+        var headerRow = this.elements.thead.rows[0];
+        var headerCells = headerRow.cells;
+        var colNames = [];
+
+        // Mark header cells
+        for (var i = 0; i < cols.length; i++) {
+            var col = cols[i];
+            if (!headerCells[col])
+                continue;
+            headerCells[col].classList.add('paginationRemoveCol');
+            colNames.push(this.format[col].title);
+        }
+
+        if (colNames.length > 0) {
+            this.elements.blank.innerHTML = "Blank columns not displayed: " + colNames.join(', ');
+        }
+
+        // Mark body cells
+        var trs = this.elements.tbody.rows;
+        for (var r = 0; r < trs.length; r++) {
+            var tr = trs[r];
+            var tds = tr.cells;
+            for (var i = 0; i < cols.length; i++) {
+                var col = cols[i];
+                if (!tds[col])
+                    continue;
+                tds[col].classList.add('paginationRemoveCol');
+            }
+        }
+    };
+
     this.resetColumnDisplay = function (tag) {
         var elements = tag.getElementsByClassName('paginationRemoveCol');
-        // elements is a live list!
-        for (let i = elements.length - 1; i >= 0; i--) {
+        for (var i = elements.length - 1; i >= 0; i--) {
             elements[i].classList.remove('paginationRemoveCol');
         }
         this.elements.blank.innerHTML = '';
-    };
-    this._removeColumns = function (cols) {
-        var nodeList = this.elements.thead.childNodes[0].childNodes;
-        var colNames = [];
-        for (let i = 0; i < cols.length; i++) {
-            var col = cols[i];
-            nodeList[col].classList.add('paginationRemoveCol');
-            colNames.push(this.format[col].title);
-        }
-        if (colNames.length > 0) {
-            this.elements.blank.innerHTML = "Blank columns not displayed: " + colNames.join();
-        }
-        var trs = this.elements.tbody.childNodes;
-        for (let j = 0; j < trs.length; j++) {
-            var tr = trs[j];
-            for (let i = 0; i < cols.length; i++) {
-                var col = cols[i];
-                this.removeColumn(tr, col);
-            }
-        }
-    };
-    this.removeColumn = function (tr, col) {
-        var tds = tr.childNodes;
-        if (tds === null) {
-            return;
-        }
-        for (let i = 0; i < tds.length; i++) {
-            var td = tds[i];
-            var span = td.getAttribute("colspan");
-            if (span > col) {
-                td.setAttribute('colspan', span - 1);
-                break;
-            }
-            if (col === i) {
-                td.classList.add('paginationRemoveCol');
-                break;
-            }
-        }
     };
 };
 ra.paginatedList = function (tag, userOptions = null) {
