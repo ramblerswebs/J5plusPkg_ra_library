@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @version    CVS: 1.0.0
  * @package    Com_Ra_library
@@ -6,7 +7,6 @@
  * @copyright  2026 Chris Vaughan
  * @license    GNU General Public License version 2 or later; see LICENSE.txt
  */
-
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
@@ -27,8 +27,8 @@ use Joomla\Filesystem\File;
  *
  * @since  1.0.0
  */
-class Com_Ra_libraryInstallerScript
-{
+class Com_Ra_libraryInstallerScript {
+
     /**
      * @param   \Joomla\CMS\Installer\InstallerAdapter  $parent  The class calling this method
      *
@@ -36,8 +36,10 @@ class Com_Ra_libraryInstallerScript
      *
      * @since   1.0.0
      */
-    public function install($parent)
-    {
+    public function install($parent) {
+        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $this->ensureCoreTablesExist($db);
+
         $this->createUncategorisedCategory('pastwalk');
         $this->createUncategorisedCategory('route');
 
@@ -51,82 +53,144 @@ class Com_Ra_libraryInstallerScript
      *
      * @since   1.0.0
      */
-    public function update($parent)
-    {
+    public function update($parent) {
+        $db = Factory::getContainer()->get(DatabaseInterface::class);
+        $this->ensureCoreTablesExist($db);
+
         $this->createUncategorisedCategory('pastwalk');
         $this->createUncategorisedCategory('route');
-        $this->removeObsoleteFrontendFiles();
 
         return true;
     }
 
     /**
-     * v5.0.28 shipped 6 dedicated menu item types for Past Walks/Routes
-     * (Blog/List/Single) before settling, at Chris's request, on reusing
-     * the single existing "Ramblers Display Option" menu type for Blog/List
-     * instead (v5.0.29), then (v5.0.38) reintroducing a much simpler fixed
-     * "pastwalk"/"route" single-item view/model (no Display Options row or
-     * menu item needed at all) once it became clear Blog/List linking to
-     * the single item needed one to always exist rather than being
-     * something an admin sets up per site. Joomla's component updater only
-     * adds/overwrites files listed in the current package - it never
-     * deletes files that existed in an older version but are absent from
-     * the new one - so anyone who installed v5.0.28 still has ITS
-     * Pastwalks/Routes (Blog/List) view+model files on disk (distinct from
-     * the CURRENT Pastwalk/Route singular ones, which ARE part of this
-     * package and must NOT be touched here), and the old menu types keep
-     * showing up in "New Menu Item" even after updating. This removes only
-     * the genuinely obsolete ones, so nobody has to do it by hand. Safe to
-     * run on every update - is_dir()/is_file() guards mean this is a no-op
-     * for anyone who never had v5.0.28 (or has already been cleaned up by
-     * a previous update).
+     * Defensive schema self-heal for the Past Walks/Routes table and the
+     * child tables that hang off it (images, attachments, route points).
+     *
+     * Why this is needed: reinstalling this package over a site where
+     * com_ra_library is ALREADY registered - which is exactly how it gets
+     * installed during normal development (re-uploading the same package
+     * again and again) - is always treated by Joomla as an *update*, never
+     * as a fresh install. That means sql/install.mysql.utf8.sql (which has
+     * the full, consolidated CREATE TABLE for #__ra_library_routes) never
+     * runs again; only whichever files under sql/updates/mysql/ have a
+     * version number greater than what Joomla has recorded for this
+     * extension in #__schemas actually execute. If that bookkeeping is
+     * ever out of step with the real database - a DB restore/import that
+     * didn't also carry over #__schemas, the table dropped by hand while
+     * testing, a schema row left over from an earlier broken
+     * install/uninstall, etc. - Joomla believes 1.0.3.sql/1.0.4.sql (the
+     * files that create and then rename this table) already ran, and will
+     * never run them again, so the table silently never (re)appears. This
+     * is exactly the situation createUncategorisedCategory()'s
+     * tableHasColumn() guard below was written to survive without a fatal
+     * error - but merely surviving isn't the same as fixing it.
+     *
+     * CREATE TABLE IF NOT EXISTS makes this safe to run on every single
+     * install/update: a no-op when the tables already exist (the normal
+     * case), and self-healing on the rare site where they don't.
+     *
+     * @param   \Joomla\Database\DatabaseInterface  $db  Database driver.
      *
      * @return  void
      *
-     * @since   1.0.0
+     * @since   1.0.11
      */
-    private function removeObsoleteFrontendFiles()
-    {
-        $siteComponentPath = JPATH_SITE . '/components/com_ra_library';
-        $adminComponentPath = JPATH_ADMINISTRATOR . '/components/com_ra_library';
-
-        // NOTE: only the PLURAL Pastwalks/Routes (Blog/List) view+tmpl dirs
-        // from v5.0.28 are obsolete. The singular Pastwalk/Route ones are
-        // current, legitimate v5.0.38+ files (the fixed single-item view) -
-        // do not add those here, or every update would delete its own
-        // freshly-installed files straight back out again.
-        $obsoleteDirs = [
-            $siteComponentPath . '/src/View/Pastwalks',
-            $siteComponentPath . '/src/View/Routes',
-            $siteComponentPath . '/tmpl/pastwalks',
-            $siteComponentPath . '/tmpl/routes',
+    private function ensureCoreTablesExist($db) {
+        $queries = [
+            'routes' => "CREATE TABLE IF NOT EXISTS `#__ra_library_routes` (
+`id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+`record_type` VARCHAR(20) NOT NULL DEFAULT 'pastwalk',
+`walks_manager_id` VARCHAR(50) NULL DEFAULT NULL,
+`needs_review` TINYINT(1) NOT NULL DEFAULT 0,
+`walk_date` DATE NULL DEFAULT NULL,
+`title` VARCHAR(255) NOT NULL DEFAULT \"\",
+`walk_leader` VARCHAR(255) NULL DEFAULT \"\",
+`description` MEDIUMTEXT NULL,
+`route_guide` MEDIUMTEXT NULL,
+`template_intro_override` MEDIUMTEXT NULL,
+`template_more_override` MEDIUMTEXT NULL,
+`distance_km` DECIMAL(6,2) NULL DEFAULT NULL,
+`national_grade` VARCHAR(50) NULL DEFAULT \"\",
+`gpx_path` VARCHAR(500) NULL DEFAULT \"\",
+`catid` INT(11) UNSIGNED NOT NULL DEFAULT 0,
+`start_latitude` DECIMAL(9,6) NULL DEFAULT NULL,
+`start_longitude` DECIMAL(9,6) NULL DEFAULT NULL,
+`start_grid_reference` VARCHAR(20) NULL DEFAULT \"\",
+`state` TINYINT(1) NOT NULL DEFAULT 0,
+`ordering` INT(11) NULL DEFAULT 0,
+`checked_out` INT(11) UNSIGNED,
+`checked_out_time` DATETIME NULL DEFAULT NULL,
+`created` DATETIME NULL DEFAULT NULL,
+`created_by` INT(11) NULL DEFAULT 0,
+`modified` DATETIME NULL DEFAULT NULL,
+`modified_by` INT(11) NULL DEFAULT 0,
+PRIMARY KEY (`id`)
+,UNIQUE KEY `idx_walks_manager_id` (`walks_manager_id`)
+,KEY `idx_state` (`state`)
+,KEY `idx_walk_date` (`walk_date`)
+,KEY `idx_catid` (`catid`)
+,KEY `idx_checked_out` (`checked_out`)
+,KEY `idx_created_by` (`created_by`)
+,KEY `idx_modified_by` (`modified_by`)
+,KEY `idx_record_type` (`record_type`)
+,KEY `idx_needs_review` (`needs_review`)
+) DEFAULT COLLATE=utf8mb4_unicode_ci;",
+            'images' => "CREATE TABLE IF NOT EXISTS `#__ra_library_images` (
+`id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+`record_id` int(11) UNSIGNED NOT NULL,
+`caption` VARCHAR(255) NULL DEFAULT \"\",
+`description` TEXT NULL,
+`thumbnail_path` VARCHAR(500) NULL DEFAULT \"\",
+`large_path` VARCHAR(500) NULL DEFAULT \"\",
+`grid_reference` VARCHAR(20) NULL DEFAULT \"\",
+`latitude` DECIMAL(9,6) NULL DEFAULT NULL,
+`longitude` DECIMAL(9,6) NULL DEFAULT NULL,
+`featured` TINYINT(1) NOT NULL DEFAULT 0,
+`ordering` INT(11) NULL DEFAULT 0,
+PRIMARY KEY (`id`)
+,KEY `idx_record_id` (`record_id`)
+,KEY `idx_featured` (`featured`)
+) DEFAULT COLLATE=utf8mb4_unicode_ci;",
+            'attachments' => "CREATE TABLE IF NOT EXISTS `#__ra_library_attachments` (
+`id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+`record_id` int(11) UNSIGNED NOT NULL,
+`attachment_type` VARCHAR(20) NOT NULL DEFAULT 'document',
+`title` VARCHAR(255) NOT NULL DEFAULT \"\",
+`file_path` VARCHAR(500) NOT NULL DEFAULT \"\",
+`file_size` INT(11) UNSIGNED NULL DEFAULT NULL,
+`ordering` INT(11) NULL DEFAULT 0,
+`featured` TINYINT(1) NOT NULL DEFAULT 0,
+PRIMARY KEY (`id`)
+,KEY `idx_record_id` (`record_id`)
+,KEY `idx_attachment_type` (`attachment_type`)
+,KEY `idx_featured` (`featured`)
+) DEFAULT COLLATE=utf8mb4_unicode_ci;",
+            'route_points' => "CREATE TABLE IF NOT EXISTS `#__ra_library_route_points` (
+`id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+`record_id` int(11) UNSIGNED NOT NULL,
+`title` VARCHAR(255) NOT NULL DEFAULT \"\",
+`description` MEDIUMTEXT NULL,
+`grid_reference` VARCHAR(20) NULL DEFAULT \"\",
+`latitude` DECIMAL(9,6) NULL DEFAULT NULL,
+`longitude` DECIMAL(9,6) NULL DEFAULT NULL,
+`ordering` INT(11) NULL DEFAULT 0,
+PRIMARY KEY (`id`)
+,KEY `idx_record_id` (`record_id`)
+) DEFAULT COLLATE=utf8mb4_unicode_ci;",
         ];
 
-        $obsoleteFiles = [
-            $siteComponentPath . '/src/Model/PastwalksModel.php',
-            $siteComponentPath . '/src/Model/RoutesModel.php',
-            // Superseded by layouthelp-syntax.html + layouthelp-fields-*.html (v5.0.38).
-            $adminComponentPath . '/tmpl/librarydisplay/layouthelp.html',
-        ];
-
-        foreach ($obsoleteDirs as $dir) {
-            if (is_dir($dir)) {
-                try {
-                    Folder::delete($dir);
-                } catch (\Exception $e) {
-                    // Best-effort only - if this fails (permissions etc.) the
-                    // old menu types just keep showing up, nothing else breaks.
-                }
-            }
-        }
-
-        foreach ($obsoleteFiles as $file) {
-            if (is_file($file)) {
-                try {
-                    File::delete($file);
-                } catch (\Exception $e) {
-                    // Best-effort only, as above.
-                }
+        foreach ($queries as $sql) {
+            try {
+                $db->setQuery($sql)->execute();
+            } catch (\Exception $e) {
+                // Best-effort only - if one of these somehow fails
+                // (insufficient DB privileges, a conflicting table already
+                // there under an incompatible definition, etc.) the rest of
+                // install()/update() should still proceed rather than
+                // fataling here; createUncategorisedCategory()'s own
+                // tableHasColumn() guard still protects against a missing
+                // record_type column after this.
             }
         }
     }
@@ -143,8 +207,7 @@ class Com_Ra_libraryInstallerScript
      *
      * @since   1.0.0
      */
-    private function createUncategorisedCategory($recordType)
-    {
+    private function createUncategorisedCategory($recordType) {
         $extension = 'com_ra_library.' . $recordType;
 
         $db = Factory::getContainer()->get(DatabaseInterface::class);
@@ -157,11 +220,11 @@ class Com_Ra_libraryInstallerScript
         }
 
         $query = $db->getQuery(true)
-            ->select('id')
-            ->from($db->quoteName('#__categories'))
-            ->where($db->quoteName('extension') . ' = ' . $db->quote($extension))
-            ->where($db->quoteName('title') . ' = ' . $db->quote('Uncategorised'))
-            ->setLimit(1);
+                ->select('id')
+                ->from($db->quoteName('#__categories'))
+                ->where($db->quoteName('extension') . ' = ' . $db->quote($extension))
+                ->where($db->quoteName('title') . ' = ' . $db->quote('Uncategorised'))
+                ->setLimit(1);
         $db->setQuery($query);
         $uncategorisedId = (int) $db->loadResult();
 
@@ -182,10 +245,10 @@ class Com_Ra_libraryInstallerScript
             // actually show up somewhere. Scoped to this record_type only,
             // since ra_library_routes now holds both past walks and routes.
             $update = $db->getQuery(true)
-                ->update($db->quoteName('#__ra_library_routes'))
-                ->set($db->quoteName('catid') . ' = ' . (int) $uncategorisedId)
-                ->where($db->quoteName('catid') . ' = 0')
-                ->where($db->quoteName('record_type') . ' = ' . $db->quote($recordType));
+                    ->update($db->quoteName('#__ra_library_routes'))
+                    ->set($db->quoteName('catid') . ' = ' . (int) $uncategorisedId)
+                    ->where($db->quoteName('catid') . ' = 0')
+                    ->where($db->quoteName('record_type') . ' = ' . $db->quote($recordType));
             $db->setQuery($update)->execute();
         }
     }
@@ -203,8 +266,7 @@ class Com_Ra_libraryInstallerScript
      *
      * @since   1.0.0
      */
-    private function tableHasColumn($db, $table, $columnName)
-    {
+    private function tableHasColumn($db, $table, $columnName) {
         try {
             $columns = $db->getTableColumns($table);
         } catch (\Exception $e) {
@@ -223,33 +285,32 @@ class Com_Ra_libraryInstallerScript
      *
      * @since   1.0.0
      */
-    private function insertUncategorisedCategory($extension)
-    {
+    private function insertUncategorisedCategory($extension) {
         $category = Table::getInstance('Category');
 
         $data = array(
-            'extension'       => $extension,
-            'title'           => 'Uncategorised',
-            'description'     => '',
-            'published'       => 1,
-            'access'          => 1,
-            'language'        => '*',
-            'level'           => 1,
-            'path'            => 'uncategorised',
-            'params'          => '{}',
-            'metadesc'        => '',
-            'metakey'         => '',
-            'metadata'        => '{}',
-            'created_time'    => Factory::getDate()->toSql(),
+            'extension' => $extension,
+            'title' => 'Uncategorised',
+            'description' => '',
+            'published' => 1,
+            'access' => 1,
+            'language' => '*',
+            'level' => 1,
+            'path' => 'uncategorised',
+            'params' => '{}',
+            'metadesc' => '',
+            'metakey' => '',
+            'metadata' => '{}',
+            'created_time' => Factory::getDate()->toSql(),
             'created_user_id' => (int) (Factory::getApplication()->getIdentity()->id ?? 0),
-            'rules'           => array(),
-            'parent_id'       => 1,
+            'rules' => array(),
+            'parent_id' => 1,
         );
 
         if (!$category->bind($data)) {
             Factory::getApplication()->enqueueMessage(
-                'Ra_library (' . $extension . '): could not bind the default Uncategorised category (' . $category->getError() . ')',
-                'warning'
+                    'Ra_library (' . $extension . '): could not bind the default Uncategorised category (' . $category->getError() . ')',
+                    'warning'
             );
 
             return 0;
@@ -271,8 +332,8 @@ class Com_Ra_libraryInstallerScript
 
         if (!$category->check()) {
             Factory::getApplication()->enqueueMessage(
-                'Ra_library (' . $extension . '): could not validate the default Uncategorised category (' . $category->getError() . ')',
-                'warning'
+                    'Ra_library (' . $extension . '): could not validate the default Uncategorised category (' . $category->getError() . ')',
+                    'warning'
             );
 
             return 0;
@@ -280,8 +341,8 @@ class Com_Ra_libraryInstallerScript
 
         if (!$category->store(true)) {
             Factory::getApplication()->enqueueMessage(
-                'Ra_library (' . $extension . '): could not save the default Uncategorised category (' . $category->getError() . ')',
-                'warning'
+                    'Ra_library (' . $extension . '): could not save the default Uncategorised category (' . $category->getError() . ')',
+                    'warning'
             );
 
             return 0;
@@ -306,8 +367,7 @@ class Com_Ra_libraryInstallerScript
      *
      * @since   1.0.0
      */
-    private function repairUncategorisedCategory($extension, $categoryId)
-    {
+    private function repairUncategorisedCategory($extension, $categoryId) {
         $category = Table::getInstance('Category');
 
         if (!$category->load($categoryId)) {
@@ -337,8 +397,8 @@ class Com_Ra_libraryInstallerScript
 
         if (!$category->check() || !$category->store(true)) {
             Factory::getApplication()->enqueueMessage(
-                'Ra_library (' . $extension . '): could not repair the misplaced Uncategorised category (' . $category->getError() . ')',
-                'warning'
+                    'Ra_library (' . $extension . '): could not repair the misplaced Uncategorised category (' . $category->getError() . ')',
+                    'warning'
             );
         }
     }

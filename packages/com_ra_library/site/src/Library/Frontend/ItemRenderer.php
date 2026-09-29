@@ -14,6 +14,7 @@ defined('_JEXEC') or die;
 
 use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Factory;
 use Ramblers\Component\Ra_library\Administrator\Helper\ImageGalleryHelper;
 use Ramblers\Component\Ra_library\Administrator\Helper\AttachmentHelper;
 use Ramblers\Component\Ra_library\Administrator\Helper\RoutePointHelper;
@@ -43,9 +44,12 @@ use Joomla\CMS\Component\ComponentHelper;
  *   {distance_km}      e.g. "8.4 km"
  *   {featured_image}   <img> of the featured photo (or first photo), empty if none
  *   {image_grid}        thumbnail grid of every photo, each linking to its full-size copy
- *   {gpx_list}          list of GPX download links, empty if none
- *   {gpx_map}           the featured GPX file's route embedded inline on the page as a map (auto-picks the only file if there's just one), empty if none
- *   {gpx_map_list}      list of the OTHER GPX files (i.e. not the one {gpx_map} is already showing), each opening that route on a map (in a popup) when clicked, empty if none
+ *   {gpx_list}          list of GPX download links, empty if none - each file's
+ *                       link/visibility follows its own download permission
+ *                       (per-file override on that GPX row, or else the
+ *                       site-wide default), see resolveGpxDownloadPermission()
+ *   {gpx_map}           the featured GPX file's route embedded inline on the page as a map (auto-picks the only file if there's just one), empty if none - its own "Download route" link follows the same per-file permission as {gpx_list}
+ *   {gpx_map_list}      list of the OTHER GPX files (i.e. not the one {gpx_map} is already showing), each opening that route on a map (in a popup) when clicked, empty if none - same per-file download permission as {gpx_list}
  *   {document_list}     list of titled document download links, empty if none
  *
  * Past walk only:
@@ -131,9 +135,9 @@ class ItemRenderer
 
         $values['featured_image'] = self::buildFeaturedImage($id);
         $values['image_grid'] = self::buildImageGrid($id);
-        $values['gpx_list'] = self::buildGpxList($id);
-        $values['gpx_map'] = self::buildGpxMap($id);
-        $values['gpx_map_list'] = self::buildGpxMapList($id);
+        $values['gpx_list'] = self::buildGpxList($id, $recordType);
+        $values['gpx_map'] = self::buildGpxMap($id, $recordType);
+        $values['gpx_map_list'] = self::buildGpxMapList($id, $recordType);
         $values['document_list'] = self::buildDocumentList($id);
 
         if ($recordType === 'pastwalk') {
@@ -638,6 +642,64 @@ class ItemRenderer
     }
 
     /**
+     * Resolves the effective GPX-download permission for one attached GPX
+     * file: its own download_override (gpxrow.xml row field) if set,
+     * otherwise the site-wide pastwalk_gpx_download / route_gpx_download
+     * default (Components > Ra_library > Options > Past Walks Layout /
+     * Routes Layout) - same override-over-global convention as
+     * resolveTemplate()/getGlobalItemTemplateIntro(), just per file rather
+     * than per record, so e.g. a re-published/copyright-cleared route's GPX
+     * can be opened up for download while a sibling file on the same
+     * record stays restricted.
+     *
+     * @param   \stdClass  $file        An attachment row from AttachmentHelper::getAttachmentsForRecord().
+     * @param   string     $recordType  'pastwalk' or 'route'.
+     *
+     * @return  string  'None', 'Users' or 'Public'.
+     *
+     * @since   1.0.0
+     */
+    private static function resolveGpxDownloadPermission(\stdClass $file, string $recordType): string
+    {
+        $override = (string) ($file->download_override ?? '');
+
+        if (in_array($override, ['None', 'Users', 'Public'], true)) {
+            return $override;
+        }
+
+        $paramKey = $recordType === 'route' ? 'route_gpx_download' : 'pastwalk_gpx_download';
+        $global = (string) ComponentHelper::getParams('com_ra_library')->get($paramKey, 'Public');
+
+        return in_array($global, ['None', 'Users', 'Public'], true) ? $global : 'Public';
+    }
+
+    /**
+     * Whether the current visitor may download a GPX file under the given
+     * resolved permission ('None'/'Users'/'Public' - see
+     * resolveGpxDownloadPermission()). Same semantics as the older
+     * Leaflet\Gpx\Map/Maplist::addDownloadLink switch used by the
+     * standalone single-route map display, just shared here so
+     * {gpx_list}/{gpx_map_list} follow the same rule.
+     *
+     * @param   string  $permission  'None', 'Users' or 'Public'.
+     *
+     * @return  boolean
+     *
+     * @since   1.0.0
+     */
+    private static function gpxDownloadAllowed(string $permission): bool
+    {
+        switch ($permission) {
+            case 'Public':
+                return true;
+            case 'Users':
+                return Factory::getApplication()->getIdentity()->id != 0;
+            default:
+                return false;
+        }
+    }
+
+    /**
      * Picks which GPX attachment {gpx_map} embeds inline: whichever one is
      * flagged featured (admin's "Featured" checkbox on the GPX subform row -
      * only one can be set, enforced in AttachmentHelper::saveAttachments()),
@@ -683,17 +745,22 @@ class ItemRenderer
      * captures that with output buffering to fit the token-substitution
      * convention every other {token} here follows.
      *
-     * addDownloadLink is turned off - {gpx_list}/{gpx_map_list} already
-     * provide a public download link for every file, so a second,
-     * login-gated one embedded mid-map would just be confusing.
+     * addDownloadLink follows this file's own resolved GPX-download
+     * permission (its download_override, or the site-wide default -
+     * resolveGpxDownloadPermission()) exactly as the standalone
+     * single-route map page (DisplayHelper::displayRoutesSingle()) already
+     * does - GpxMap::displayPath() itself renders the "Download route:"
+     * link (or the "please log in" message) when allowed, so this is the
+     * only place that link needs building for the embedded map.
      *
-     * @param   int  $recordId  The past walk / route id.
+     * @param   int     $recordId    The past walk / route id.
+     * @param   string  $recordType  'pastwalk' or 'route'.
      *
      * @return  string
      *
      * @since   1.0.0
      */
-    private static function buildGpxMap(int $recordId): string
+    private static function buildGpxMap(int $recordId, string $recordType): string
     {
         $file = self::getPrimaryGpxFile($recordId);
 
@@ -702,7 +769,7 @@ class ItemRenderer
         }
 
         $map = new GpxMap();
-        $map->addDownloadLink = 'None';
+        $map->addDownloadLink = self::resolveGpxDownloadPermission($file, $recordType);
 
         ob_start();
         $map->displayPath($file->file_path);
@@ -710,7 +777,15 @@ class ItemRenderer
         return (string) ob_get_clean();
     }
 
-    private static function buildGpxList(int $recordId): string
+    /**
+     * @param   int     $recordId    The past walk / route id.
+     * @param   string  $recordType  'pastwalk' or 'route'.
+     *
+     * @return  string
+     *
+     * @since   1.0.0
+     */
+    private static function buildGpxList(int $recordId, string $recordType): string
     {
         $files = AttachmentHelper::getAttachmentsForRecord($recordId, 'gpx');
 
@@ -718,14 +793,34 @@ class ItemRenderer
             return '';
         }
 
-        $html = '<ul class="ra-gpx-list">';
+        $items = '';
+        $anyLoginGated = false;
 
         foreach ($files as $file) {
+            $permission = self::resolveGpxDownloadPermission($file, $recordType);
             $title = htmlspecialchars((string) ($file->title ?: 'GPX file'));
-            $html .= '<li><a href="' . htmlspecialchars(self::rootUrl($file->file_path)) . '" download>' . $title . '</a></li>';
+
+            if (self::gpxDownloadAllowed($permission)) {
+                $items .= '<li><a href="' . htmlspecialchars(self::rootUrl($file->file_path)) . '" download>' . $title . '</a></li>';
+            } elseif ($permission === 'Users') {
+                // Logged-in-only and this visitor is a guest - list the file
+                // (so its existence isn't simply hidden) but without a link,
+                // plus one combined login prompt after the loop.
+                $items .= '<li class="ra-gpx-login-required">' . $title . '</li>';
+                $anyLoginGated = true;
+            }
+            // permission === 'None' (for this visitor) - omit entirely.
         }
 
-        $html .= '</ul>';
+        if ($items === '') {
+            return '';
+        }
+
+        $html = '<ul class="ra-gpx-list">' . $items . '</ul>';
+
+        if ($anyLoginGated) {
+            $html .= '<p class="ra-gpx-login-required">' . htmlspecialchars(Text::_('COM_RA_LIBRARY_GPX_LOGIN_TO_DOWNLOAD')) . '</p>';
+        }
 
         return $html;
     }
@@ -744,13 +839,14 @@ class ItemRenderer
      * Leaflet stack + licensed map options are on the page for that JS to
      * use, once, only when there's actually a GPX file to show.
      *
-     * @param   int  $recordId  The past walk / route id.
+     * @param   int     $recordId    The past walk / route id.
+     * @param   string  $recordType  'pastwalk' or 'route'.
      *
      * @return  string
      *
      * @since   1.0.0
      */
-    private static function buildGpxMapList(int $recordId): string
+    private static function buildGpxMapList(int $recordId, string $recordType): string
     {
         $files = AttachmentHelper::getAttachmentsForRecord($recordId, 'gpx');
 
@@ -774,23 +870,40 @@ class ItemRenderer
             return '';
         }
 
-        self::loadGpxMapAssets();
-
-        $html = '<ul class="ra-gpx-map-list">';
+        $items = '';
+        $anyLoginGated = false;
 
         foreach ($files as $file) {
+            $permission = self::resolveGpxDownloadPermission($file, $recordType);
             $title = htmlspecialchars((string) ($file->title ?: 'GPX file'));
-            // href is a normal, fully-qualified download link (right-click/no-JS
-            // fallback). data-gpx-path is the same file but as the bare,
-            // root-relative path ra.display.gpxSingle actually needs - it
-            // prefixes this itself with ra.baseDirectory() (see maplist.js),
-            // so passing the already-domain-qualified href there would double
-            // up the site URL and produce a bad request.
-            $html .= '<li><a class="ra-gpx-map-link" href="' . htmlspecialchars(self::rootUrl($file->file_path))
-                . '" data-gpx-path="' . htmlspecialchars($file->file_path) . '">' . $title . '</a></li>';
+
+            if (self::gpxDownloadAllowed($permission)) {
+                // href is a normal, fully-qualified download link (right-click/no-JS
+                // fallback). data-gpx-path is the same file but as the bare,
+                // root-relative path ra.display.gpxSingle actually needs - it
+                // prefixes this itself with ra.baseDirectory() (see maplist.js),
+                // so passing the already-domain-qualified href there would double
+                // up the site URL and produce a bad request.
+                $items .= '<li><a class="ra-gpx-map-link" href="' . htmlspecialchars(self::rootUrl($file->file_path))
+                    . '" data-gpx-path="' . htmlspecialchars($file->file_path) . '">' . $title . '</a></li>';
+            } elseif ($permission === 'Users') {
+                $items .= '<li class="ra-gpx-login-required">' . $title . '</li>';
+                $anyLoginGated = true;
+            }
+            // permission === 'None' (for this visitor) - omit entirely.
         }
 
-        $html .= '</ul>';
+        if ($items === '') {
+            return '';
+        }
+
+        self::loadGpxMapAssets();
+
+        $html = '<ul class="ra-gpx-map-list">' . $items . '</ul>';
+
+        if ($anyLoginGated) {
+            $html .= '<p class="ra-gpx-login-required">' . htmlspecialchars(Text::_('COM_RA_LIBRARY_GPX_LOGIN_TO_DOWNLOAD')) . '</p>';
+        }
 
         return $html;
     }

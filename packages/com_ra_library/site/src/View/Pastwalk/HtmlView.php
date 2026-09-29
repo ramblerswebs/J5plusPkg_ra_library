@@ -25,21 +25,17 @@ use Ramblers\Component\Ra_library\Site\Library\Load\Load;
  *
  * @since  1.0.0
  */
-class HtmlView extends BaseHtmlView
-{
+class HtmlView extends BaseHtmlView {
+
     protected $item;
-
     protected $renderedItem;
-
     protected $categoryBreadcrumb;
-
     protected $params;
 
     /**
      * @since 1.0.0
      */
-    public function display($tpl = null)
-    {
+    public function display($tpl = null) {
         $app = Factory::getApplication();
 
         $this->item = $this->get('Item');
@@ -75,8 +71,7 @@ class HtmlView extends BaseHtmlView
     /**
      * @since 1.0.0
      */
-    protected function _prepareDocument()
-    {
+    protected function _prepareDocument() {
         $app = Factory::getApplication();
         $title = $this->item->title ?? '';
 

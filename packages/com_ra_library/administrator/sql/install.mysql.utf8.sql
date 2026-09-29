@@ -143,6 +143,7 @@ CREATE TABLE IF NOT EXISTS `#__ra_library_attachments` (
 `file_size` INT(11) UNSIGNED NULL DEFAULT NULL,
 `ordering` INT(11) NULL DEFAULT 0,
 `featured` TINYINT(1) NOT NULL DEFAULT 0,
+`download_override` VARCHAR(10) NOT NULL DEFAULT '',
 PRIMARY KEY (`id`)
 ,KEY `idx_record_id` (`record_id`)
 ,KEY `idx_attachment_type` (`attachment_type`)

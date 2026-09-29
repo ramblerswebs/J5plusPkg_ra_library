@@ -49,6 +49,16 @@
             <option value="0">JNO</option>
             <option value="1">JYES</option>
         </field>
+        <field name="pastwalk_gpx_download"
+               type="list"
+               default="Public"
+               label="COM_RA_LIBRARY_CONFIG_PASTWALK_GPX_DOWNLOAD_LABEL"
+               description="COM_RA_LIBRARY_CONFIG_PASTWALK_GPX_DOWNLOAD_DESC"
+        >
+            <option value="None">COM_RA_LIBRARY_GPX_DOWNLOAD_OPTION_NONE</option>
+            <option value="Users">COM_RA_LIBRARY_GPX_DOWNLOAD_OPTION_USERS</option>
+            <option value="Public">COM_RA_LIBRARY_GPX_DOWNLOAD_OPTION_PUBLIC</option>
+        </field>
         <field
             name="pastwalk_item_template_intro"
             type="LayoutHelpTextarea"
@@ -92,6 +102,16 @@
         >
             <option value="0">JNO</option>
             <option value="1">JYES</option>
+        </field>
+        <field name="route_gpx_download"
+               type="list"
+               default="Public"
+               label="COM_RA_LIBRARY_CONFIG_ROUTE_GPX_DOWNLOAD_LABEL"
+               description="COM_RA_LIBRARY_CONFIG_ROUTE_GPX_DOWNLOAD_DESC"
+        >
+            <option value="None">COM_RA_LIBRARY_GPX_DOWNLOAD_OPTION_NONE</option>
+            <option value="Users">COM_RA_LIBRARY_GPX_DOWNLOAD_OPTION_USERS</option>
+            <option value="Public">COM_RA_LIBRARY_GPX_DOWNLOAD_OPTION_PUBLIC</option>
         </field>
         <field
             name="route_item_template_intro"

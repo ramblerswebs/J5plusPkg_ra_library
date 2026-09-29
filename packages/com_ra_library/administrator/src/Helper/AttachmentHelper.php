@@ -195,6 +195,15 @@ class AttachmentHelper
                 $featuredAssigned = true;
             }
 
+            // Per-file download override (gpxrow.xml only - document rows
+            // have no such field, so $row['download_override'] is simply
+            // absent for them and this stays blank/"use global setting").
+            $downloadOverride = (string) ($row['download_override'] ?? '');
+
+            if (!\in_array($downloadOverride, ['None', 'Users', 'Public'], true)) {
+                $downloadOverride = '';
+            }
+
             $columns = [
                 'record_id' => $recordId,
                 'attachment_type' => $attachmentType,
@@ -203,6 +212,7 @@ class AttachmentHelper
                 'file_size' => $fileSize,
                 'featured' => $featured,
                 'ordering' => $ordering,
+                'download_override' => $downloadOverride,
             ];
 
             if ($existingRow) {
