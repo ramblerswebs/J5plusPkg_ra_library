@@ -39,28 +39,28 @@ class DisplayoptionLabelHelper {
     public static function getLabels(): array {
         $disp = [];
 
-        $disp['future_display'] = 'Walks: Display of led walks (tabbed layout)';
-        $disp['future_nextwalks'] = 'Walks: Next walks';
-        $disp['future_table'] = 'Walks: Table of led walks';
-        $disp['future_list'] = 'Walks: List of led walks';
-        $disp['future_map'] = 'Walks: Map of led walks';
-        $disp['future_fulldetails'] = 'Walks: Full details';
-        $disp['future_calendar'] = 'Walks: Calendar';
-        $disp['future_BU51a'] = 'Walks: BU51:Fulldetails';
-        $disp['future_BU51b'] = 'Walks: BU51:Groupstabs';
-        $disp['future_BU51c'] = 'Walks: BU51:Microtabs';
-        $disp['future_BU51d'] = 'Walks: BU51:Tabs';
-        $disp['future_MLa'] = 'Walks: ML:Print';
-        $disp['future_NSa'] = 'Walks: NS:Walksprinted';
-        $disp['future_SR02a'] = 'Walks: SR02:Display';
-        $disp['future_SR02b'] = 'Walks: SR02:Nextwalks';
-        $disp['future_SR02c'] = 'Walks: SR02:Table2';
+        $disp['future_display'] = 'Led Walks: Display of led walks (tabbed layout)';
+        $disp['future_nextwalks'] = 'Led Walks: Next walks';
+        $disp['future_table'] = 'Led Walks: Table of led walks';
+        $disp['future_list'] = 'Led Walks: List of led walks';
+        $disp['future_map'] = 'Led Walks: Map of led walks';
+        $disp['future_fulldetails'] = 'Led Walks: Full details';
+        $disp['future_calendar'] = 'Led Walks: Calendar';
+        $disp['future_BU51a'] = 'Led Walks: BU51:Fulldetails';
+        $disp['future_BU51b'] = 'Led Walks: BU51:Groupstabs';
+        $disp['future_BU51c'] = 'Led Walks: BU51:Microtabs';
+        $disp['future_BU51d'] = 'Led Walks: BU51:Tabs';
+        $disp['future_MLa'] = 'Led Walks: ML:Print';
+        $disp['future_NSa'] = 'Led Walks: NS:Walksprinted';
+        $disp['future_SR02a'] = 'Led Walks: SR02:Display';
+        $disp['future_SR02b'] = 'Led Walks: SR02:Nextwalks';
+        $disp['future_SR02c'] = 'Led Walks: SR02:Table2';
 
-        $disp['table_csv'] = 'Table: Display data from a CSV file';
-        $disp['table_sql'] = 'Table: Display data from an SQL table';
-        $disp['table_json'] = 'Table: Display data from a JSON feed';
-
-        $disp['documents_folder'] = 'Documents: Display list of documents in folder';
+        $disp['routes_blog'] = 'Routes: Blog';
+        $disp['routes_list'] = 'Routes: List';
+        $disp['routes_table'] = 'Routes: Table';
+        $disp['routes_maptable'] = 'Routes: Map & Table';
+        $disp['routes_categorytree'] = 'Routes: List all Categories in a Category Tree';
         $disp['routes_display_single'] = 'Routes: Display single walking route(GPX)';
         $disp['routes_display_multi'] = 'Routes: Display mutliple walking routes(GPX)';
         $disp['routes_plot'] = 'Routes: Plot a walking route';
@@ -71,11 +71,11 @@ class DisplayoptionLabelHelper {
         $disp['pastwalks_maptable'] = 'Past Walks: Map & Table';
         $disp['pastwalks_categorytree'] = 'Past Walks: List all Categories in a Category Tree';
 
-        $disp['routes_blog'] = 'Routes: Blog';
-        $disp['routes_list'] = 'Routes: List';
-        $disp['routes_table'] = 'Routes: Table';
-        $disp['routes_maptable'] = 'Routes: Map & Table';
-        $disp['routes_categorytree'] = 'Routes: List all Categories in a Category Tree';
+        $disp['table_csv'] = 'Table: Display data from a CSV file';
+        $disp['table_sql'] = 'Table: Display data from an SQL table';
+        $disp['table_json'] = 'Table: Display data from a JSON feed';
+
+        $disp['documents_folder'] = 'Documents: Display list of documents in folder';
 
         return $disp;
     }

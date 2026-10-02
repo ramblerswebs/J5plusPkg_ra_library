@@ -2,11 +2,11 @@
 <extension type="package" version="5.0" method="upgrade">
 	<name>Ramblers Library</name>
 	<author>Chris Vaughan</author>
-	<creationDate>25/09/2026</creationDate>
+	<creationDate>02/10/2026</creationDate>
 	<copyright>Copyright (C) 2026 by Chris Vaughan</copyright>
 	<license>GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html</license>
 	<packagename>ra_library</packagename>
-	<version>1.0.8</version>
+	<version>1.0.9</version>
 	<url></url>
 	<packager>Chris Vaughan</packager>
 	<packagerurl></packagerurl>

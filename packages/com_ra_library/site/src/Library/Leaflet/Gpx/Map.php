@@ -1,4 +1,5 @@
 <?php
+
 namespace Ramblers\Component\Ra_library\Site\Library\Leaflet\Gpx;
 
 /**
@@ -20,6 +21,15 @@ class Map extends LeafletMap {
     private $data = null;
 
     public function displayPath($gpx) {
+        // Joomla's core media field (since 4.x) appends image-metadata such as
+        // "#joomlaImage://local-images/path/to/file.gpx?width=0&height=0" to the
+        // stored value whenever a file is picked via the media selector's "Insert"
+        // button, even for non-image types like GPX. Strip that fragment so the
+        // rest of this method sees a plain filesystem-relative path.
+        if (is_string($gpx) && strpos($gpx, '#') !== false) {
+            $gpx = strstr($gpx, '#', true);
+        }
+
         Load::addScript("media/com_ra_library/js/leaflet/gpx/maplist.js");
         Load::addStyleSheet('media/com_ra_library/css/ramblerslibrary.css');
         $this->help_page = "singleroute.html";
@@ -33,7 +43,7 @@ class Map extends LeafletMap {
         $this->options->displayElevation = true;
         $this->options->print = true;
 
-        $this->data =  new \stdClass();
+        $this->data = new \stdClass();
         if ($this->imperial) {
             $this->data->imperial = "true";
         } else {
@@ -94,5 +104,4 @@ class Map extends LeafletMap {
         }
         return false;
     }
-
 }
