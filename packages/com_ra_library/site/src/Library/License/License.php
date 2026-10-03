@@ -47,6 +47,16 @@ class License {
         return null;
     }
 
+    public static function getOrdnanceSurveyLicenseKeyNGD() {
+        if (strpos(Uri::base(), 'localhost') !== false) {
+            return self::$data->OrdnanceSurveyLicenseKeyNGD;
+        }
+        if (strpos(Uri::base(), 'locahaberandlorn-ramblers') !== false) {
+            return self::$data->OrdnanceSurveyLicenseKeyNGD;
+        }
+        return null;
+    }
+
     public static function getOrdnanceSurveyLicenseKey() {
         return self::$data->OrdnanceSurveyLicenseKey;
     }

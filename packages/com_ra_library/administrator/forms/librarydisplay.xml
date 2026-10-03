@@ -84,10 +84,29 @@
                     </group> 
                 </group>
             </group>
-            <group label="Walking routes" >
-                <option value="routes_plot">Plot a walking route</option>
-                <option value="routes_display_single">Display single walking route(GPX)</option>
-                <option value="routes_display_multi">Display mutliple walking routes(GPX)</option>
+            <group label="Past Walks">
+                <option value="pastwalks_blog">Past Walks - Blog</option>
+                <option value="pastwalks_list">Past Walks - List</option>
+                <option value="pastwalks_categorytree">Past Walks - List all Categories in a Category Tree</option>
+                <option value="pastwalks_table">Past Walks - Table</option>
+                <option value="pastwalks_maptable">Past Walks - Map and Table</option>
+            </group>
+           
+            <group label="Walking Routes">
+                <group label="From the route library">
+                    <option value="routes_blog">Blog</option>
+                    <option value="routes_list">List</option>
+                    <option value="routes_table">Table</option>
+                    <option value="routes_maptable">Map and Table</option>
+                    <option value="routes_categorytree">List all Categories in a Category Tree</option>
+                </group>
+                <group label="From GPX files">
+                    <option value="routes_display_single">Display single walking route (GPX)</option>
+                    <option value="routes_display_multi">Display multiple walking routes (GPX folder)</option>
+                </group>
+                <group label="Draw a new route">
+                    <option value="routes_plot">Plot a walking route</option>
+                </group>
             </group>
             <group label="Display table of data">     
                 <option value="table_csv">Display data from a CSV file</option>
@@ -97,20 +116,7 @@
             <group label="Documents" >     
                 <option value="documents_folder">Display list of documents in folder</option>
             </group>
-            <group label="Past Walks">
-                <option value="pastwalks_blog">Past Walks - Blog</option>
-                <option value="pastwalks_list">Past Walks - List</option>
-                <option value="pastwalks_categorytree">Past Walks - List all Categories in a Category Tree</option>
-                <option value="pastwalks_table">Past Walks - Table</option>
-                <option value="pastwalks_maptable">Past Walks - Map and Table</option>
-            </group>
-            <group label="Routes">
-                <option value="routes_blog">Routes - Blog</option>
-                <option value="routes_list">Routes - List</option>
-                <option value="routes_categorytree">Routes - List all Categories in a Category Tree</option>
-                <option value="routes_table">Routes - Table</option>
-                <option value="routes_maptable">Routes - Map and Table</option>
-            </group>
+    
         </field>
        
         <fields name="options" label="Options" description="Nested options structure">
@@ -565,12 +571,12 @@ Default is&lt;br /&gt;
             />
                      
             <field name="routes_file"
-                   type="media" 
-                   label="Path to GPX file" 
-                   description="Choose a gpx file you have already uploaded" 
+                   type="media"
+                   label="Path to GPX file"
+                   description="Choose a gpx file you have already uploaded. If no gpx files are shown when browsing, check the Document file types allowed in Media Options (Content -> Media -> Options), and also check the File Browser file type options for the active JCE Editor Profile (Components -> JCE Administration -> Editor Profiles) if JCE is installed, as either can hide gpx files."
                    types="documents"
                    preview="false"
-            />  
+            />
            
             <field
                 name="routes_folder"

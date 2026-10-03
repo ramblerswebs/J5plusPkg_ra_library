@@ -40,30 +40,6 @@ ON DUPLICATE KEY UPDATE
 `extension` = VALUES(`extension`);
 
 
--- Mail spool table for com_ra_library
--- Generated for Joomla 5/6
-
-CREATE TABLE IF NOT EXISTS `#__ra_mail_spool` (
-  `id`          int(11) NOT NULL AUTO_INCREMENT,
-  `created`     datetime NOT NULL,
-  `status`      tinyint(1) NOT NULL DEFAULT 0,
-  `attempts`    tinyint(1) NOT NULL DEFAULT 0,
-  `sent`        datetime NULL,
-  `component`   varchar(100) NOT NULL DEFAULT '',
-  `to_email`    text NOT NULL,
-  `cc`          text NULL,
-  `bcc`         text NULL,
-  `reply_to`    text NULL,
-  `subject`     varchar(255) NOT NULL,
-  `body`        longtext NULL,
-  `htmlbody`    longtext NULL,
-  `attachments` text NULL,
-  `error`       text NULL,
-  PRIMARY KEY (`id`),
-  KEY `idx_status` (`status`),
-  KEY `idx_component` (`component`),
-  KEY `idx_sent` (`sent`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Past Walks / Routes feature - consolidated schema (originally built up
 -- across sql/updates/mysql/1.0.3.sql through 1.0.10.sql, including a table
@@ -167,6 +143,7 @@ CREATE TABLE IF NOT EXISTS `#__ra_library_attachments` (
 `file_size` INT(11) UNSIGNED NULL DEFAULT NULL,
 `ordering` INT(11) NULL DEFAULT 0,
 `featured` TINYINT(1) NOT NULL DEFAULT 0,
+`download_override` VARCHAR(10) NOT NULL DEFAULT '',
 PRIMARY KEY (`id`)
 ,KEY `idx_record_id` (`record_id`)
 ,KEY `idx_attachment_type` (`attachment_type`)

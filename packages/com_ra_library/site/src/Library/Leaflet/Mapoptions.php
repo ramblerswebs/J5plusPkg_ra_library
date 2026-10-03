@@ -78,6 +78,7 @@ class Mapoptions {
         $this->licenseKeys->OSTestkey = License::getOrdnanceSurveyLicenseTestKey();
         $this->licenseKeys->OSTestStyle = License::getOrdnanceSurveyLicenseKeyTestStyle();
         $this->licenseKeys->OSMVectorStyle = License::getOSMVectoricenseKey();
+        $this->licenseKeys->OSMNGD = License::getOrdnanceSurveyLicenseKeyNGD();
         $this->licenseKeys->mapBoxkey = License::getMapBoxLicenseKey();
         $this->licenseKeys->thunderForestkey = License::getThunderForestLicenseKey();
         $this->licenseKeys->W3Wkey = License::getW3WLicenseKey();

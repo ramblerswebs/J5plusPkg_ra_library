@@ -179,9 +179,8 @@ class Sourcewalksmanager extends Sourcebase {
                         $contactForm = $item->walk_leader->email_form;
                         $telephone1 = ($item->walk_leader->telephone == null) ? "" : $item->walk_leader->telephone;
                         $telephone2 = "";
-                        $email = "";
                         $isLeader = false;
-                        $contact = new Contact($item->id, $isLeader, $contactName, $email, $telephone1, $telephone2, $contactForm);
+                        $contact = new Contact($item->id, $isLeader, $contactName, $telephone1, $telephone2, $contactForm);
                         $walk->addContact($contact);
                     }
                 }
@@ -285,8 +284,7 @@ class Sourcewalksmanager extends Sourcebase {
                     $telephone1 = ($item->event_organiser->telephone == null) ? "" : $item->event_organiser->telephone;
                     $telephone2 = "";
                     $isLeader = false;
-                    $email = "";
-                    $contact = new Contact($item->id, $isLeader, $contactName, $email, $telephone1, $telephone2, $contactForm);
+                    $contact = new Contact($item->id, $isLeader, $contactName, $telephone1, $telephone2, $contactForm);
                     $walk->addContact($contact);
                 }
 

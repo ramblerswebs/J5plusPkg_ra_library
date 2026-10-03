@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <extension type="component" version="5.0" method="upgrade">
     <name>com_ra_library</name>
-    <creationDate>13-09-2026</creationDate>
+    <creationDate>2-10-2026</creationDate>
     <copyright>2026 Chris Vaughan</copyright>
     <license>GNU General Public License version 2 or later; see LICENSE.txt</license>
     <author>Chris Vaughan</author>
     <authorEmail>ruby.tuesday@ramblers-webs.org.uk</authorEmail>
     <authorUrl>https://ramblers-webs.org.uk</authorUrl>
-    <version>5.0.82</version>
+    <version>5.0.84</version>
     <description>Component to Ramblers displays of events etc</description>
     <namespace path="src">Ramblers\Component\Ra_library</namespace>
     <scriptfile>script.php</scriptfile>

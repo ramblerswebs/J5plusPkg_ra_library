@@ -27,4 +27,16 @@
            description="COM_RA_LIBRARY_GPX_FIELD_FEATURED_DESC"
            value="1"
     />
+
+    <field name="download_override"
+           type="list"
+           default=""
+           label="COM_RA_LIBRARY_GPX_FIELD_DOWNLOAD_OVERRIDE_LABEL"
+           description="COM_RA_LIBRARY_GPX_FIELD_DOWNLOAD_OVERRIDE_DESC"
+    >
+        <option value="">COM_RA_LIBRARY_GPX_DOWNLOAD_OPTION_GLOBAL</option>
+        <option value="None">COM_RA_LIBRARY_GPX_DOWNLOAD_OPTION_NONE</option>
+        <option value="Users">COM_RA_LIBRARY_GPX_DOWNLOAD_OPTION_USERS</option>
+        <option value="Public">COM_RA_LIBRARY_GPX_DOWNLOAD_OPTION_PUBLIC</option>
+    </field>
 </form>

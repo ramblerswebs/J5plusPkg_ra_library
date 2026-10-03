@@ -62,10 +62,21 @@ ra.display.gpxSingle = function (options, data) {
             var clear = document.createElement('div');
             clear.classList.add("clearBoth");
             _this.pageDiv.appendChild(clear);
-            const collection = document.getElementsByClassName("leaflet-control-container");
-            const ele = collection[0].getElementsByClassName("elevation");
+            // Scoped to this map's own container (masterdiv), not the whole
+            // document - document.getElementsByClassName(...)[0] picked
+            // whichever Leaflet map's control-container happened to be
+            // FIRST in the page, which is only ever this one when it's the
+            // only map on the page (a normal single-item page). Open the
+            // same item in the "view in a popup" modal (ra.itempreview.js)
+            // or the {gpx_map_list} lightbox (ra.gpxlightbox.js) from a
+            // page that already has its own map (e.g. a Map/Table display)
+            // and [0] silently grabbed that OTHER map's control-container
+            // instead - whose "elevation" control is absent, so `ele[0]`
+            // was undefined (not null, so the check below never caught it)
+            // and the next line threw.
+            const ele = masterdiv.getElementsByClassName("elevation");
             var elevation = ele[0];
-            if (elevation !== null) {
+            if (elevation) {
                 var svg = elevation.childNodes[1];
                 var clone = svg.cloneNode(true);
                 var holder = document.createElement('div');
@@ -126,10 +137,25 @@ ra.display.gpxSingle = function (options, data) {
         }
     };
 };
-ra.display.gpxGetElevationSVG = function () {
-    const collection = document.getElementsByClassName("leaflet-control-container");
-    const ele = collection[0].getElementsByClassName("elevation");
+// container is optional (defaults to document, the old behaviour) - pass
+// the specific map's own masterdiv when more than one Leaflet map/control-
+// container can be on the page at once (see the same fix in the 'loaded'
+// handler above), otherwise this can pick up the wrong map's elevation
+// control.
+ra.display.gpxGetElevationSVG = function (container) {
+    const scope = container || document;
+    const ele = scope.getElementsByClassName("elevation");
     var elevation = ele[0];
+
+    if (!elevation) {
+        // No elevation control in this container yet (e.g. displayElevation
+        // wasn't enabled, or the GPX hasn't finished loading) - callers
+        // already need to handle a route with no elevation data (see
+        // gpxSingle's own "No elevation data" case), so return null rather
+        // than throwing on elevation.childNodes below.
+        return null;
+    }
+
     var svg = elevation.childNodes[1];
     return svg;
 };
@@ -428,6 +454,23 @@ ra.display.gpxFolder = function (options, data) {
         this.gpx.on('loaded', function (e) {
             _this._map.fitBounds(e.target.getBounds(), {padding: [20, 20]});
             _this._map.closePopup();
+
+            // Same elevation-chart clone gpxSingle's own 'loaded' handler
+            // appends next to its route details - missing here before, so
+            // the folder/table display's route panel only ever showed the
+            // min/max/gain text (formatAltitude(), already in `header`
+            // above) with no chart. Scoped to this._map's own container
+            // (elements.mapDiv), not the whole document, for the same
+            // reason as gpxSingle's fix - this map is one of potentially
+            // several Leaflet maps on the page at once (e.g. behind an
+            // item-preview popup). routeDiv's innerHTML was already reset
+            // for this route in updateGPXid() before displayGPX() was
+            // called, so there's no stale previous clone to remove first.
+            var svg = ra.display.gpxGetElevationSVG(_this.elements.mapDiv);
+
+            if (svg) {
+                ra.display.gpxGetElevationSVGCopy(svg, _this.elements.routeDiv);
+            }
         });
         this.gpx.addTo(this._map);
     };

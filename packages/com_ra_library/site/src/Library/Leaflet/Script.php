@@ -43,7 +43,8 @@ class Script {
         if ($this->command !== "noDirectAction") {
             echo "<div id='" . $options->divId . "'></div>" . PHP_EOL;
         }
-        $text = "window.addEventListener('load', function () {" . PHP_EOL;
+        //    $text = "window.addEventListener('load', function () {" . PHP_EOL;
+        $text = "(function () {var run = function () {" . PHP_EOL;
         $text .= "var mapOptions='" . addslashes(json_encode($options)) . "';" . PHP_EOL;
         // set data object for this command      
         if ($this->dataObject !== null) {
@@ -57,7 +58,8 @@ class Script {
             $text .= "var data=null;" . PHP_EOL;
         }
 
-        $text .= "ra.bootstrapper('" . $jv . "','" . $this->command . "',mapOptions,data);});" . PHP_EOL;
+        $text .= "ra.bootstrapper('" . $jv . "','" . $this->command . "',mapOptions,data);};" . PHP_EOL;
+        $text .= "if (document.readyState === 'loading') {document.addEventListener('DOMContentLoaded', run);} else {run();}})();" . PHP_EOL;
         $document->addScriptDeclaration($text);
 
         $this->addScriptsandStyles($options);
@@ -110,7 +112,9 @@ class Script {
         Load::addStyleSheet($path . "MarkerCluster.css");
         Load::addScript($path . "leaflet.markercluster.js");
         Load::addScript("media/com_ra_library/js/vendors/Leaflet.FeatureGroup.SubGroup-1.0.2/src/subgroup.js");
-        // subGroup used by Places.js
+        Load::addScript("media/com_ra_library/js/leaflet/L.RA.FootpathNetworkLayer.js");
+
+// subGroup used by Places.js
         Load::addScript("media/com_ra_library/js/leaflet/L.Control.Places.js");
         Load::addScript("media/com_ra_library/js/leaflet/L.Control.Mouse.js");
         Load::addStyleSheet("media/com_ra_library/js/leaflet/L.Control.Mouse.css");

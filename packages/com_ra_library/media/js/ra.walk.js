@@ -35,15 +35,17 @@ ra.events = function () {
             '15+ miles (24 km)']};
     this.registerEvent = function (event) {
         if (event.getIntValue('basics', 'future')) {
-            this.events.push(event);
+            var idx = this.events.findIndex(o => String(o.admin.id) === String(event.admin.id));
+            if (idx >= 0) {
+                this.events[idx] = event;   // same walk registered again: replace, don't duplicate
+            } else {
+                this.events.push(event);
+            }
         }
     };
     this.getEvent = function (id) {
-        var item = this.events.find(o => o.admin.id === id);
-        if (typeof item !== 'undefined') {
-            return item;
-        }
-        return null;
+        var item = this.events.find(o => String(o.admin.id) === String(id));
+        return (typeof item !== 'undefined') ? item : null;
     };
     this.forEachAll = function (fcn) {
         this.events.forEach(event => {
@@ -757,7 +759,7 @@ ra.event = function () {
         tag.appendChild(mapdiv);
         var lmap = new ra.leafletmap(mapdiv, ra.defaultMapOptions);
         lmap.display();
-        map = lmap.map();
+        var map = lmap.map();
         mapLayer = L.featureGroup().addTo(map);
         osMapLayer = L.featureGroup().addTo(map);
         tag.addEventListener("display-os-map", function (e) {
@@ -903,7 +905,7 @@ ra.event = function () {
         this.start.forEach(loc => {
             var id = this.admin.id;
             var isCancelled = this.isCancelled();
-            var isEvent = this.eventType === "Event";
+            var isEvent = this.admin.eventType === "Event";
             var summary = this.getWalkText(mapSummary, false);
             var link = this.getWalkText(mapLinks, false);
             var grade = this.getWalkText(mapGrade, false);
@@ -1387,7 +1389,7 @@ ra.event.timelocation = function () {
             this.timeHHMM = location.timeHHMM;
             this.timeHHMMshort = location.timeHHMMshort;
         } else {
-            location.time = null;
+            //location.time = null;
         }
         this.description = location.description;
         this.gridref = location.gridref;
@@ -1796,17 +1798,13 @@ ra.event.contact = function (id) {
     this.id = id;
     this.isLeader = false;
     this.contactName = '';
-    this.email = 'yes';
-    this.key = null;
     this.contactForm = null;
     this.telephone1 = '';
     this.telephone2 = '';
     this.convertPHPContact = function (phpcontact) {
         this.isLeader = phpcontact.isLeader;
         this.contactName = phpcontact.contactName;
-        this.email = phpcontact.email;
         this.contactForm = phpcontact.contactForm;
-        this.key = phpcontact.key;
         this.telephone1 = phpcontact.telephone1;
         this.telephone2 = phpcontact.telephone2;
         return this;
@@ -1826,7 +1824,7 @@ ra.event.contact = function (id) {
                 if (this.contactName !== "") {
                     out = $titlePrefix + " <b>" + this.contactName + "</b>" + BR;
                 }
-                if (this.email !== "") {
+                if (this.contactForm !== null) {
                     out += this.getValue("{emaillink}") + BR;
                 }
                 if (this.telephone1 !== "") {
@@ -1858,15 +1856,8 @@ ra.event.contact = function (id) {
                 break;
             case "{email}":
             case "{emaillink}":
-                if (this.email !== "") {
-                    if (this.contactForm !== "") {
-                        out = "<span><b>Contact link: </b><a target='_blank' href='" + this.contactForm + "' title='Click to send an email to leader/contact or group'>Email contact</a></span>";
-                    } else {
-                        console.log('No contact form for this event');
-                        var $gwemlink = "javascript:ra.walk.emailContact(\"" + this.id + "\")";
-                        out = "<span><a href='" + $gwemlink + "' title='Click to send an email to leader/contact'>Email contact</a></span>";
-                    }
-
+                if (this.contactForm !== null) {
+                    out = "<span><b>Contact link: </b><a target='_blank' href='" + this.contactForm + "' title='Click to send an email to leader/contact or group'>Email contact</a></span>";
                 }
                 break;
         }
@@ -1915,7 +1906,7 @@ ra.event.contact = function (id) {
             $html += ra.html.addDiv("telephone", $text);
         }
 
-        if (this.email !== "") {
+        if (this.contactForm !== null) {
             anyContact = true;
             $html += this.getValue("{emaillink}");
         }
@@ -2206,7 +2197,7 @@ ra.event.postcode = function () {
             } else {
                 $note = "Location is " + this.distance.toFixed() + " metres to the " + this.direction.name + " of " + this.text;
                 $note2 = "Check postcode suitablility on map";
-                if (this.dstance < 500) {
+                if (this.distance < 500) {
                     $distclass = "distnear";
                 }
             }
@@ -2246,11 +2237,16 @@ ra.event.postcode = function () {
 // *****************************************************************************
 
 
+
 // static functions used as links from HTML
-ra.walk = (function () {
+ra.walk = ra.walk || (function () {
     var my = {};
     my.DisplayWalkFunction = "ra.walk.displayWalkID";
     my._startup = true;
+    // true once registerPHPWalks has run at least once
+    my._registered = false;
+    // clicks made before walks were registered; replayed once registration is done
+    my._waiting = [];
     my.walks = new ra.events();
     my.registerEvent = function (newEvent) {
         my.walks.registerEvent(newEvent);
@@ -2260,14 +2256,25 @@ ra.walk = (function () {
         // stores walks for php walks displays
         var phpwalks = null;
         phpwalks = data.walks;
-        if (phpwalks !== null) {
-            data.walks.forEach(phpwalk => {
-                var newEvent = new ra.event();
-                newEvent.convertPHPWalk(phpwalk);
-                my.walks.registerEvent(newEvent);
-            });
-            data.walks = null;
-            my.displayUrlWalkPopup();
+        try {
+            if (phpwalks !== null) {
+                data.walks.forEach(phpwalk => {
+                    var newEvent = new ra.event();
+                    newEvent.convertPHPWalk(phpwalk);
+                    my.walks.registerEvent(newEvent);
+                });
+                data.walks = null;
+                my.displayUrlWalkPopup();
+            }
+        } finally {
+            my._registered = true;
+            // replay early clicks after the whole load event has finished, so walks
+            // from every registerPHPWalks call on the page are registered first
+            setTimeout(function () {
+                my._waiting.splice(0).forEach(function (fn) {
+                    fn();
+                });
+            }, 0);
         }
         this.load = function () {
         };
@@ -2293,24 +2300,20 @@ ra.walk = (function () {
         var walk = my.walks.getEvent(id);
         if (walk !== null) {
             walk.displayInModal(event);
+        } else if (!my._registered) {
+            // page not fully loaded yet - run when walks have been registered
+            my._waiting.push(function () {
+                my.displayWalkID(event, id);
+            });
         } else {
-            setTimeout(function () {
-                // wait for walk registration to complete
-                var walk = my.walks.getEvent(id);
-                if (walk !== null) {
-                    walk.displayInModal(event);
-                } else {
-                    ra.showMsg('SORRY unable to display specified walk/event.');
-                }
-
-            }, 500);
+            ra.showMsg('SORRY unable to display specified walk/event.');
         }
     };
     // static option to display grades popup
     // used in html links from PHP and js
     my.dGH = function () {
         var $url;
-        $url = ra.baseDirectory() + "media/com_ra_library/js/pages/grades.html";
+        $url = ra.baseDirectory() + "media/lib_ramblers/pages/grades.html";
         var marker;
         ra.ajax.postUrl($url, "", marker, my._displayGradesModal);
     };
@@ -2319,43 +2322,6 @@ ra.walk = (function () {
         $html = $html.replace(/basedirectory/g, ra.baseDirectory());
         ra.modals.createModal($html);
     };
-    // link to send email to walk's contact
-    my.emailContact = function ($id) {
-
-        var url = 'https://sendemail.ramblers-webs.org.uk';
-        var $walk = my.walks.getEvent($id);
-        var data = {};
-        data.key = $walk.getIntValue("contacts", "key");
-        data.group = $walk.admin.groupName;
-        data.title = $walk.basics.title;
-        data.date = ra.date.dowShortddmmyyyy($walk.basics.walkDate);
-        var frameDiv = '<div id="raContactDiv"></div>';
-        ra.modals.createModal(frameDiv);
-        var div = document.getElementById("raContactDiv");
-        var frame = document.createElement('iframe');
-        frame.setAttribute('class', 'ra contactForm');
-        frame.setAttribute('src', url);
-        frame.setAttribute('title', 'Contact group about group walk');
-        div.appendChild(frame);
-        // Create IE + others compatible event handler
-        var eventMethod = window.addEventListener ? "addEventListener" : "attachEvent";
-        var eventer = window[eventMethod];
-        var messageEvent = eventMethod === "attachEvent" ? "onmessage" : "message";
-        // Listen to message from child window
-        eventer(messageEvent, function (e) {
-            var height = parseInt(e.data);
-            if (height > 0) {
-                frame.style.height = height + "px";
-            }
-            //console.log('parent received message!:  ', e.data);
-        }, false);
-        frame.onload = function () {
-            //console.log(" frame.onload ");
-            var sentThis = JSON.stringify(data);
-            frame.contentWindow.postMessage(sentThis, url);
-        };
-    };
-    // toggle display of walk in Fulldetails display
     my.toggleDisplay = function (e, id) {
         var tag = e.currentTarget;
         tag.classList.toggle("active");
