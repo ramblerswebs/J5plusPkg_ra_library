@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <extension type="component" version="5.0" method="upgrade">
     <name>com_ra_library</name>
-    <creationDate>7-11-2026</creationDate>
+    <creationDate>9-11-2026</creationDate>
     <copyright>2026 Chris Vaughan</copyright>
     <license>GNU General Public License version 2 or later; see LICENSE.txt</license>
     <author>Chris Vaughan</author>
     <authorEmail>ruby.tuesday@ramblers-webs.org.uk</authorEmail>
     <authorUrl>https://ramblers-webs.org.uk</authorUrl>
-    <version>1.0.88</version>
+    <version>1.0.109</version>
     <description>Component to Ramblers displays of events etc</description>
     <namespace path="src">Ramblers\Component\Ra_library</namespace>
     <scriptfile>script.php</scriptfile>
@@ -42,6 +42,7 @@
         <folder>gpxsymbols</folder>
         <folder>images</folder>
         <folder>js</folder>
+        <folder>pages</folder>
         <filename>joomla.asset.json</filename>
     </media>
    

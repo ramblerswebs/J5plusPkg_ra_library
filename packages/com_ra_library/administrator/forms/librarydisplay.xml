@@ -50,8 +50,7 @@
                type="NestedPanels" 
                default="" 
                required="true"
-               label="Select a display type" 
-               description="Select option from lowest level">
+               label="Select a display type">
             <group label="Future led walks and events" 
                    value="walks"
                    image="/media/com_ra_library/images/displayoptions/person-hiking-solid-full.svg"
@@ -63,6 +62,9 @@
                     <option value="future_nextwalks"
                             preview="/media/com_ra_library/images/displayoptions/future_nextwalks.png"
                             caption="Next walks, displayed in a module">Next walks</option>
+                    <option value="future_blog"
+                            preview="/media/com_ra_library/images/displayoptions/future_blog.png"
+                            caption="Blog: some walks in full, then a swipe row of panels, then links">Blog (full walks, panels and links)</option>
                 </group>
                 <group label="Calendar" >
                     <option value="future_calendar"
@@ -565,6 +567,121 @@ Default is&lt;br /&gt;
                    description="Default is &amp;lt;div class=&amp;quot;ra-categorytree-featured&amp;quot;&amp;gt;{featured_image}&amp;lt;/div&amp;gt;&amp;lt;h3&amp;gt;{title_link}&amp;lt;/h3&amp;gt;&amp;lt;p class=&amp;quot;ra-categorytree-meta&amp;quot;&amp;gt;{item_count} here, {total_item_count} in this branch&amp;lt;/p&amp;gt;{if:description}&amp;lt;div class=&amp;quot;ra-categorytree-desc&amp;quot;&amp;gt;{description}&amp;lt;/div&amp;gt;{/if}"
                    showon="displayoption:routes_categorytree"
             />
+            <!-- Led walks Blog (future_blog): fields are rendered by edit.php -->
+            <field name="blog_title_full" type="text" default=""
+                   label="Title above the full walks"
+                   description="Optional, for example Our Next Walks and Events. Leave blank for no title." />
+            <field name="blog_title_panel" type="text" default=""
+                   label="Title above the panels"
+                   description="Optional, for example Further Walks and Events. Leave blank for no title." />
+            <field name="blog_title_links" type="text" default=""
+                   label="Title above the links"
+                   description="Optional. Leave blank for no title." />
+            <field name="blog_title_level" type="list" default="2"
+                   label="Title size"
+                   description="Heading level used for the three titles. Choose to suit the headings on the rest of your page.">
+                <option value="2">Heading 2</option>
+                <option value="3">Heading 3</option>
+                <option value="4">Heading 4</option>
+                <option value="5">Heading 5</option>
+            </field>
+            <field name="blog_full_items" type="number" default="1" min="0" max="20"
+                   label="Number of full walks"
+                   description="Shown first, in full. 0 for none. Walks are taken in date order: full walks, then panels, then links." />
+            <field name="blog_sections" type="Sortablelist" multiple="true" default=""
+                   label="Sections in each full walk"
+                   description="Select the sections you want and sort into order; deselect them all for the default order, which is Title, Photo, Description, Meeting, Start, Finish, Difficulty, Contact, Map, More">
+                <option value="Title">Title</option>
+                <option value="Photo">Photo</option>
+                <option value="Description">Description</option>
+                <option value="Meeting">Meeting</option>
+                <option value="Start">Start</option>
+                <option value="Finish">Finish</option>
+                <option value="Difficulty">Difficulty</option>
+                <option value="Contact">Contact</option>
+                <option value="Map">Map</option>
+                <option value="More">More details button</option>
+            </field>
+            <field name="blog_full_map" type="list" default="button"
+                   label="Map in full walks"
+                   description="Used when the Map section is selected. A map only loads when asked for or when it scrolls into view, so several full walks do not slow the page.">
+                <option value="button">Show when 'Show map' is clicked</option>
+                <option value="always">Show automatically when scrolled into view</option>
+            </field>
+            <field name="custom_blog_full" type="LayoutHelpTextarea" helptype="walks" class="layout-check" filter="raw"
+                   label="Customise full walk layout"
+                   description="Optional. Replaces the text sections (Title, Description, Meeting, Start, Finish, Difficulty, Contact) with your own layout. Photo, Map and More details still follow the section list." />
+            <field name="blog_panel_items" type="number" default="8" min="0" max="100"
+                   label="Number of walks in the panel row"
+                   description="Shown after the full walks, each in a white panel. 0 for none." />
+            <field name="blog_panel_mode" type="list" default="flexible"
+                   label="Panel layout"
+                   description="Flexible: as many panels as fit the width of the page, swipe or use the buttons for the rest. Fixed: a set number of columns, all panels shown, wrapping onto more rows.">
+                <option value="flexible">Flexible - swipe row, number shown depends on page width</option>
+                <option value="fixed">Fixed number of columns</option>
+            </field>
+            <field name="blog_panel_minwidth" type="number" default="280" min="150" max="600" step="10"
+                   label="Minimum panel width (px)"
+                   description="Flexible layout only. Larger values give fewer, wider panels."
+                   showon="blog_panel_mode:flexible" />
+            <field name="blog_panel_columns" type="number" default="3" min="1" max="6"
+                   label="Number of columns"
+                   description="Fixed layout only. Reduces to 2 columns on narrow screens and 1 on phones."
+                   showon="blog_panel_mode:fixed" />
+            <field name="blog_panel_image" type="radio" layout="joomla.form.field.radio.switcher" default="1"
+                   label="Show photo in panel"
+                   description="Show the first photo of the walk, if it has one, at the top of the panel.">
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
+            <field name="blog_photo_height" type="number" default="300" min="100" max="600" step="10"
+                   label="Photo height (px)"
+                   description="Height of the photo at the top of each panel. The photo keeps its shape and is cropped to fill the space." />
+            <field name="blog_default_image" type="list" default="none"
+                   label="Picture for walks without a photo"
+                   description="Shown at the top of a panel when the walk has no photo of its own. Only used when 'Show photo in panel' is on.">
+                <option value="none">None - no picture</option>
+                <option value="path">Footpath and trees picture</option>
+                <option value="logo">Ramblers logo</option>
+            </field>
+            <field name="blog_panel_fields" type="Sortablelist" multiple="true" default=""
+                   label="Items shown in each panel"
+                   description="Select the items you want and sort into order. Deselect them all for the default: Title, Date, Difficulty, Distance. Items a walk has no value for are left out. Ignored if you set your own panel layout below.">
+                <option value="Title">Title</option>
+                <option value="Date">Date and start time</option>
+                <option value="Group">Group</option>
+                <option value="Difficulty">Difficulty (national grade)</option>
+                <option value="LocalGrade">Local grade</option>
+                <option value="Distance">Distance</option>
+                <option value="Ascent">Ascent</option>
+                <option value="Type">Type of walk</option>
+                <option value="Meeting">Meeting place</option>
+                <option value="Start">Start place</option>
+                <option value="Leader">Leader</option>
+                <option value="Description">Description</option>
+            </field>
+            <field name="blog_panel_labels" type="radio" layout="joomla.form.field.radio.switcher" default="1"
+                   label="Show item labels"
+                   description="Show a label before each item, for example Difficulty: Easy.">
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
+            <field name="blog_panel_arrows" type="radio" layout="joomla.form.field.radio.switcher" default="1"
+                   label="Previous / next buttons"
+                   description="Flexible layout only. Visitors can always swipe or scroll."
+                   showon="blog_panel_mode:flexible">
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
+            <field name="custom_blog_panel" type="LayoutHelpTextarea" helptype="walks" class="layout-check" filter="raw"
+                   label="Customise panel layout"
+                   description="Optional. If you fill this in it replaces the list of items above, and you have full control of the text in each panel." />
+            <field name="blog_link_items" type="number" default="6" min="0" max="100"
+                   label="Number of links"
+                   description="Shown last, as a plain list of links that open the walk details. 0 for none." />
+            <field name="custom_blog_links" type="LayoutHelpTextarea" helptype="walks" class="layout-check" filter="raw"
+                   label="Customise link layout"
+                   description="Default is {gradeimg}{dowddmm}{, ?title}{, ?distance}" />
             <field name="css_file"
                    type="text" 
                    label="Add your own CSS Stylesheet file" 

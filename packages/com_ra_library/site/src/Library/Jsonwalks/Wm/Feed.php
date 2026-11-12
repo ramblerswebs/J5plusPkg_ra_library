@@ -53,12 +53,11 @@ class Feed {
     public function getItemsWithinArea($latitude, $longitude, $distance, $readwalks, $readevents, $readwellbeingwalks) {
         $feedOpts = new Feedoptions();
 
-        $feedOpts->include_events = $latitude;
         $feedOpts->latitude = $latitude;
         $feedOpts->longitude = $longitude;
         $feedOpts->distance = $distance;
-        $feedOpts->include_walks = $readevents;
-        $feedOpts->include_events = $readwalks;
+        $feedOpts->include_walks = $readwalks;
+        $feedOpts->include_events = $readevents;
         $feedOpts->include_wellbeing_walks = $readwellbeingwalks;
         $items = $this->getFeed($feedOpts);
         return $items;

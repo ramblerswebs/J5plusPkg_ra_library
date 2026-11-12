@@ -227,6 +227,7 @@ ra.event = function () {
             "<b>BASICS</b>", "{title}", "{description}", "{additionalNotes}",
             "{dowShortdd}", "{dowShortddmm}", "{mapDowShortddmm}",
             "{dowShortddmmyyyy}", "{dowShortddyyyy}", "{dowdd}", "{dowddmm}", "{dowddmmyyyy}",
+            "{datebadge}", "{datebadgedow}", "{datebadgeday}", "{datebadgedowday}",
             "<b>MEETING</b>", "{meet}", "{meetTime}", "{meetPlace}", "{meetGR}", "{meetPC}",
             "{meetw3w}", "{meetDirections}",
             "<b>START</b>", "{start}", "{startTime}", "{startPlace}", "{startGR}", "{startPC}",
@@ -413,6 +414,10 @@ ra.event = function () {
             case "{dowdd}":
             case "{dowddmm}":
             case "{dowddmmyyyy}":
+            case "{datebadge}":
+            case "{datebadgedow}":
+            case "{datebadgeday}":
+            case "{datebadgedowday}":
             case "{title}":
             case "{description}":
             case "{additionalNotes}":
@@ -790,12 +795,37 @@ ra.event = function () {
         }
         return $text;
     };
+    // Position just after the </span> that closes the <span> starting at st.
+    // Spans can be nested (e.g. the date badge), so the first </span> found is not always the right one.
+    // If the span is never closed the end of the text is returned.
+    this.endOfSpan = function (text, st) {
+        var depth = 0;
+        var pos = st;
+        while (pos < text.length) {
+            var open = text.indexOf("<span", pos);
+            var close = text.indexOf("</span>", pos);
+            if (close === -1) {
+                return text.length;
+            }
+            if (open !== -1 && open < close) {
+                depth++;
+                pos = open + 5;
+            } else {
+                depth--;
+                pos = close + 7;
+                if (depth === 0) {
+                    return pos;
+                }
+            }
+        }
+        return text.length;
+    };
     this.addWalkLink = function ($text, $class = "") {
         // split into text before and after span
         var st, en;
         var start = '';
         st = $text.indexOf("<span");
-        en = $text.indexOf("/span>") + 6;
+        en = st === -1 ? 0 : this.endOfSpan($text, st);
         if (st > -1 && en > st) {
             if (st > 0) {
                 //var a = $text;
@@ -988,10 +1018,45 @@ ra.event.basics = function () {
                 out = this.dateRange(ra.date.dowddmmyyyy);
                 //out = "<b>" + ra.date.dowddmmyyyy(this.walkDate) + "</b>";
                 break;
+            case "{datebadge}":
+                out = this.dateBadge(false, true);
+                break;
+            case "{datebadgedow}":
+                out = this.dateBadge(true, true);
+                break;
+            case "{datebadgeday}":
+                out = this.dateBadge(false, false);
+                break;
+            case "{datebadgedowday}":
+                out = this.dateBadge(true, false);
+                break;
             default:
         }
         return out;
         ;
+    };
+    // Calendar-leaf style date badge, styled by .ra-datebadge in ramblerslibrary.css.
+    // Must produce the same markup as Basics::dateBadge in PHP.
+    this.dateBadge = function (dow, month) {
+        var long = {weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'};
+        var classes = 'ra-datebadge' + (dow ? ' has-dow' : '') + (month ? ' has-month' : '') + (this.multiDate ? ' is-multi' : '');
+        var out = "<span class='" + classes + "'><span class='sr'>" + this.walkDate.toLocaleDateString("en-GB", long);
+        if (this.multiDate) {
+            out += " to " + this.finishDate.toLocaleDateString("en-GB", long);
+        }
+        out += "</span>";
+        if (dow) {
+            out += "<span class='dow' aria-hidden='true'>" + ra.date.dowShort(this.walkDate) + "</span>";
+        }
+        out += "<span class='dd' aria-hidden='true'>" + this.walkDate.getDate() + "</span>";
+        if (month) {
+            out += "<span class='mon' aria-hidden='true'>" + ra.date.monthShort(this.walkDate) + "</span>";
+        }
+        if (this.multiDate) {
+            var to = (dow ? ra.date.dowShort(this.finishDate) + " " : "") + this.finishDate.getDate() + (month ? " " + ra.date.monthShort(this.finishDate) : "");
+            out += "<span class='to' aria-hidden='true'>to " + to + "</span>";
+        }
+        return out + "</span>";
     };
     this.dateRange = function (func, addYear = false) {
         var out = func(this.walkDate);
@@ -2108,7 +2173,7 @@ ra.walk = ra.walk || (function () {
     // used in html links from PHP and js
     my.dGH = function () {
         var $url;
-        $url = ra.baseDirectory() + "media/lib_ramblers/pages/grades.html";
+        $url = ra.baseDirectory() + "media/com_ra_library/pages/grades.html";
         var marker;
         ra.ajax.postUrl($url, "", marker, my._displayGradesModal);
     };

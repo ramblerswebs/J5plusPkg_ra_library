@@ -27,7 +27,7 @@ class Walk implements \JsonSerializable {
     private $linkedWalks = [];
     private $linkedEvent = null;
     private $icsDayEvents = false;
-    private static $withMonth = ["dowShortddmm", "dowddmm", "dowddmmyyyy"];
+    private static $withMonth = ["dowShortddmm", "dowddmm", "dowddmmyyyy", "datebadge", "datebadgedow"];
     private static $customValuesClass = null;
     private static $customValuesMethod = null;
 
@@ -470,6 +470,11 @@ class Walk implements \JsonSerializable {
         return $this->admin->filterWalks();
     }
 
+    // first image of the walk, or null if it has none
+    public function getFirstMedia() {
+        return count($this->media) > 0 ? $this->media[0] : null;
+    }
+
     public function getMedia($item) {
         $out = [];
         if (count($item->media) > 0) {
@@ -562,6 +567,10 @@ class Walk implements \JsonSerializable {
             case "{dowdd}":
             case "{dowddmm}":
             case "{dowddmmyyyy}":
+            case "{datebadge}":
+            case "{datebadgedow}":
+            case "{datebadgeday}":
+            case "{datebadgedowday}":
             case "{title}":
             case "{description}":
             case "{additionalNotes}":
@@ -726,12 +735,41 @@ class Walk implements \JsonSerializable {
         return $text;
     }
 
+    /*
+     * Position just after the </span> that closes the <span> starting at $st.
+     * Spans can be nested (e.g. the date badge), so the first </span> found is not always the right one.
+     * If the span is never closed the end of the text is returned.
+     */
+    private function endOfSpan(string $text, int $st): int {
+        $depth = 0;
+        $pos = $st;
+        $len = strlen($text);
+        while ($pos < $len) {
+            $open = strpos($text, "<span", $pos);
+            $close = strpos($text, "</span>", $pos);
+            if ($close === false) {
+                return $len;
+            }
+            if ($open !== false && $open < $close) {
+                $depth++;
+                $pos = $open + 5;
+            } else {
+                $depth--;
+                $pos = $close + 7;
+                if ($depth === 0) {
+                    return $pos;
+                }
+            }
+        }
+        return $len;
+    }
+
     private function addWalkLink($id, $text, $class = "") {
         // split into text before and after span
         $start = '';
         $st = strpos($text, "<span");
-        $en = strpos($text, "/span>") + 6;
-        if ($st > -1 && $en > $st) {
+        $en = $st === false ? 0 : $this->endOfSpan($text, $st);
+        if ($st !== false && $en > $st) {
             if ($st > 0) {
                 $start = $this->_addWalkLink($id, substr($text, 0, $st), $class);
             }

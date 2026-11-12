@@ -1106,3 +1106,47 @@ iframe.ra.contactForm {
 .ra-calendar-url {
     width:100%;
 }
+
+/* ---- Date badges: {datebadge} {datebadgedow} {datebadgeday} {datebadgedowday} ----
+   Colours can be set per display, or on the whole site, with the CSS variables
+   --ra-datebadge-bg and --ra-datebadge-fg. The size follows the font size. */
+.ra-datebadge {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    min-width: 3.2em;
+    padding: .3em .5em;
+    border-radius: 6px;
+    background: var(--ra-datebadge-bg, var(--mintcake, #9BC8AB));
+    color: var(--ra-datebadge-fg, #1d1d1b);
+    line-height: 1.1;
+    text-align: center;
+    font-weight: 700;
+    vertical-align: middle;
+}
+.ra-datebadge .dow,
+.ra-datebadge .mon {
+    font-size: .9em;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+.ra-datebadge .dd {
+    font-size: 1.6em;
+}
+.ra-datebadge .to {
+    margin-top: .2em;
+    font-size: .8em;
+    font-weight: 500;
+}
+/* full date for screen readers; the visible parts are aria-hidden */
+.ra-datebadge .sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}

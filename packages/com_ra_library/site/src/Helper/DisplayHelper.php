@@ -19,6 +19,7 @@ use Ramblers\Component\Ra_library\Site\Library\Jsonwalks\Std\Areawalks;
 use Ramblers\Component\Ra_library\Site\Library\Jsonwalks\Std\Display;
 use Ramblers\Component\Ra_library\Site\Library\Jsonwalks\Std\Fulldetails;
 use Ramblers\Component\Ra_library\Site\Library\Jsonwalks\Std\Nextwalks;
+use Ramblers\Component\Ra_library\Site\Library\Jsonwalks\Std\Blog;
 use Ramblers\Component\Ra_library\Site\Library\Jsonwalks\Std\Calendar;
 use Ramblers\Component\Ra_library\Site\Library\Jsonwalks\Std\IcsDownload;
 use Ramblers\Component\Ra_library\Site\Library\Ics\Calendarbutton;
@@ -176,6 +177,10 @@ class DisplayHelper {
     private function getFutureEventFeedoptions($sources) {
         $feedoptions = new Feedoptions();
         foreach ($sources as $source) {
+            // a source switched off in the form is skipped (a missing value counts as on)
+            if (isset($source->enabled) && !$source->enabled) {
+                continue;
+            }
             switch ($source->load_type) {
                 case 'wm':
                     $codes = array_column($source->ramblersgroups, 'code');
@@ -187,6 +192,13 @@ class DisplayHelper {
                     $long = $source->arealongitude;
                     $dist = $source->arearadius;
                     $feedoptions->addWalksManagerGroupsInArea($lat, $long, $dist);
+                    break;
+                case 'wmwellbeing':
+                    $codes = array_column($source->wellbeinggroups, 'code');
+                    $feedoptions->addWalksManagerWellbeingWalks(implode(",", $codes));
+                    break;
+                case 'wmwellbeingarea':
+                    $feedoptions->addWalksManagerWellbeingInArea($source->arealatitude, $source->arealongitude, $source->arearadius);
                     break;
                 default:
                     throw new \RuntimeException('Invalid source of events');
@@ -265,6 +277,9 @@ class DisplayHelper {
             case 'future_nextwalks':
                 $display = new Nextwalks();
                 break;
+            case 'future_blog':
+                $display = new Blog();
+                break;
             case "future_calendar":
                 $display = new Calendar();
                 break;
@@ -320,13 +335,14 @@ class DisplayHelper {
     private function setClasses($type, $display, $data) {
         switch ($type) {
             case 'future_nextwalks':
+            case 'future_blog':
             case 'future_table':
             case 'future_list':
             case 'future_fulldetails':
-                if (strlen($data->walks_class) > 0) {
+                if (strlen($data->walks_class ?? '') > 0) {
                     $display->setWalksClass($data->walks_class);
                 }
-                if (strlen($data->walk_class) > 0) {
+                if (strlen($data->walk_class ?? '') > 0) {
                     $display->setWalkClass($data->walk_class);
                 }
                 break;
@@ -347,6 +363,27 @@ class DisplayHelper {
                 if (strlen($data->custom_nextwalks) > 0) {
                     $display->customFormat($data->custom_nextwalks);
                 }
+                break;
+            case 'future_blog':
+                $display->setFullCount($data->blog_full_items ?? 1);
+                $display->setSections($data->blog_sections ?? []);
+                $display->setMapMode($data->blog_full_map ?? 'button');
+                $display->setCustomFull($data->custom_blog_full ?? '');
+                $display->setPanelCount($data->blog_panel_items ?? 8);
+                $display->setPanelMode($data->blog_panel_mode ?? 'flexible');
+                $display->setPanelMinWidth($data->blog_panel_minwidth ?? 280);
+                $display->setPanelColumns($data->blog_panel_columns ?? 3);
+                $display->setPanelImage((string) ($data->blog_panel_image ?? '1') !== '0');
+                $display->setPanelArrows((string) ($data->blog_panel_arrows ?? '1') !== '0');
+                $display->setCustomPanel($data->custom_blog_panel ?? '');
+                $display->setPanelItems($data->blog_panel_fields ?? []);
+                $display->setPanelLabels((string) ($data->blog_panel_labels ?? '1') !== '0');
+                $display->setDefaultImage($data->blog_default_image ?? 'none');
+                $display->setPhotoHeight($data->blog_photo_height ?? 300);
+                $display->setTitles($data->blog_title_full ?? '', $data->blog_title_panel ?? '', $data->blog_title_links ?? '');
+                $display->setTitleLevel($data->blog_title_level ?? 2);
+                $display->setLinkCount($data->blog_link_items ?? 6);
+                $display->setCustomLinks($data->custom_blog_links ?? '');
                 break;
             case 'future_display':
                 if (property_exists($data, 'custom_tabs') && count($data->custom_tabs) > 0) {

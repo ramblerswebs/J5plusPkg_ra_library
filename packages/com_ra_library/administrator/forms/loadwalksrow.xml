@@ -3,14 +3,20 @@
 >
     <fieldset name="controls" label="">
         <field name="enabled" 
-               type="checkbox" 
-               checked="1" 
+               type="radio" 
+               layout="joomla.form.field.radio.switcher"
+               default="1"
                label="Enabled" 
-               class="col-sm-12" />
+               class="switcher">
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
         <field name="load_type" type="list" label="Source of walks/events" class="col-sm-12">
             <option value="">Select</option>
             <option value="wm">Walks Manager: Load led walks and events for one or more groups</option>
             <option value="wmarea">Walks Manager: Load led walks and events in a geographic area for any group</option>
+            <option value="wmwellbeing">Walks Manager: Load wellbeing walks for one or more groups/areas</option>
+            <option value="wmwellbeingarea">Walks Manager: Load wellbeing walks in a geographic area for any group</option>
         </field>
     
         <field name="ramblersgroups" 
@@ -23,12 +29,22 @@
                multiple="true" 
         />    
         
+        <field name="wellbeinggroups" 
+               type="feedcheckboxes" 
+               feedurl="https://groups.theramblers.org.uk/?types=W" 
+               scope="global" 
+               cache_lifetime="3600"                           
+               showon="load_type:wmwellbeing" 
+               label="Select Wellbeing Group(s)/Area" 
+               multiple="true" 
+        />
+
         <field name="arealatitude"
                type="number"
                default=""
                max="90"
                min="-90"
-               showon="load_type:wmarea" 
+               showon="load_type:wmarea[OR]load_type:wmwellbeingarea" 
                label="Centre of area: Latitude"
                description="Latitude in the format 52.891"
                filter="raw"
@@ -38,19 +54,19 @@
                default=""
                max="180"
                min="-180"
-               showon="load_type:wmarea" 
+               showon="load_type:wmarea[OR]load_type:wmwellbeingarea" 
                label="Centre of area: Longitude"
                description="Longitude in the format -1.234"
                filter="raw"
         />
         <field name="arearadius" 
                type="integer" 
-               label="Led walks up to this distance, in Km, from the centre" 
+               label="Walks up to this distance, in Km, from the centre" 
                first="5"
                last="100"
                step="5"
                default=""
-               showon="load_type:wmarea" 
+               showon="load_type:wmarea[OR]load_type:wmwellbeingarea" 
                class="col-sm-12" />
        
     </fieldset>

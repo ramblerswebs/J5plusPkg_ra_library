@@ -1,21 +1,22 @@
 <?php
+
 namespace Ramblers\Component\Ra_library\Site\Library\Leaflet;
 
 /**
- * Description of mapdraw
+ * Two maps that move together, so different map styles can be compared.
+ * Not for general use: reached through {ra_library:mapcompare} when the
+ * plugin's "Specialist tags" setting is on.
  *
  * @author Chris Vaughan
  */
 use Ramblers\Component\Ra_library\Site\Library\Load\Load;
-class Mapcompare extends Map {
 
-    private $zoom = 10;
-    private $lat = 52.89;
-    private $long = -1.48;
-    public $displayDescription = true;
+class Mapcompare extends Map {
 
     public function __construct() {
         parent::__construct();
+        // where the maps start; change with setCenter()
+        $this->options->setinitialView(52.89, -1.48, 10);
     }
 
     public function setCenter($lat, $long, $zoom) {
@@ -37,9 +38,6 @@ class Mapcompare extends Map {
         $this->options->mylocation = true;
         $this->options->settings = true;
         $this->options->print = true;
-        $this->options->latitude = $this->lat;
-        $this->options->longitude = $this->long;
-        $this->options->zoom = $this->zoom;
 
         parent::display();
 

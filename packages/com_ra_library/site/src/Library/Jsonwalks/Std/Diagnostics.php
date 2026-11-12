@@ -14,6 +14,7 @@ class Diagnostics extends Displaybase {
     private $options = ["{lf}", "<b>ADMIN</b>", "{group}",
         "<b>BASICS</b>", "{dowShortdd}", "{dowShortddmm}",
         "{dowShortddmmyyyy}", "{dowdd}", "{dowddmm}", "{dowddmmyyyy}",
+        "{datebadge}", "{datebadgedow}", "{datebadgeday}", "{datebadgedowday}",
         "{title}", "{description}", "{additionalNotes}",
         "<b>MEETING</b>", "{meet}", "{meetTime}", "{meetPlace}", "{meetGR}", "{meetPC}", "{meetw3w}", "{meetDirections}",
         "<b>START</b>", "{start}", "{startTime}", "{startTimefull}", "{startPlace}", "{startGR}", "{startPC}", "{startw3w}",

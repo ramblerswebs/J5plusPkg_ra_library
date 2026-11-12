@@ -67,6 +67,18 @@ class Basics implements \JsonSerializable {
                     $out = str_replace(":00", "", $timeHHMM);
                 }
                 break;
+            case "{datebadge}":
+                $out = $this->dateBadge(false, true);
+                break;
+            case "{datebadgedow}":
+                $out = $this->dateBadge(true, true);
+                break;
+            case "{datebadgeday}":
+                $out = $this->dateBadge(false, false);
+                break;
+            case "{datebadgedowday}":
+                $out = $this->dateBadge(true, false);
+                break;
             case "{dowShortdd}":
                 $out = $this->dateRange('D, jS ');
                 break;
@@ -87,6 +99,35 @@ class Basics implements \JsonSerializable {
                 break;
         }
         return $out;
+    }
+
+    /*
+     * Calendar-leaf style date badge. The look is all CSS (.ra-datebadge in ramblerslibrary.css).
+     * The JavaScript version in ra.walk.js must produce the same markup.
+     * $dow   - show the day of the week above the day number
+     * $month - show the month below the day number
+     * For a multi date event the end date is added as a small 'to ...' line.
+     */
+    private function dateBadge(bool $dow, bool $month): string {
+        $classes = 'ra-datebadge' . ($dow ? ' has-dow' : '') . ($month ? ' has-month' : '') . ($this->multiDate ? ' is-multi' : '');
+        $full = $this->walkDate->format('l jS F Y');
+        $out = "<span class='" . $classes . "'><span class='sr'>" . $full;
+        if ($this->multiDate) {
+            $out .= " to " . $this->finishDate->format('l jS F Y');
+        }
+        $out .= "</span>";
+        if ($dow) {
+            $out .= "<span class='dow' aria-hidden='true'>" . $this->walkDate->format('D') . "</span>";
+        }
+        $out .= "<span class='dd' aria-hidden='true'>" . $this->walkDate->format('j') . "</span>";
+        if ($month) {
+            $out .= "<span class='mon' aria-hidden='true'>" . $this->walkDate->format('M') . "</span>";
+        }
+        if ($this->multiDate) {
+            $to = ($dow ? $this->finishDate->format('D ') : '') . $this->finishDate->format('j') . ($month ? $this->finishDate->format(' M') : '');
+            $out .= "<span class='to' aria-hidden='true'>to " . $to . "</span>";
+        }
+        return $out . "</span>";
     }
 
     private function dateRange($format, $addYear = false) {

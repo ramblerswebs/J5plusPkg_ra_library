@@ -160,7 +160,7 @@ ra.fetch_mails = function ($text) {
     }
 };
 ra.convert_mails = function ($text) {
-    var $img = '<img src="' + ra.baseDirectory() + 'media/lib_ramblers/images/symbol_at.png" alt="@ sign" />';
+    var $img = '<img src="' + ra.baseDirectory() + 'media/com_ra_library/images/symbol_at.png" alt="@ sign" />';
     var $emails = ra.fetch_mails($text);
     $emails.forEach(myFunction);
     function myFunction(value, index, array) {

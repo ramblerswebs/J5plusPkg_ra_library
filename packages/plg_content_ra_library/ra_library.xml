@@ -2,12 +2,12 @@
 <extension type="plugin" group="content" method="upgrade">
     <name>plg_content_ra_library</name>
     <author>Chris Vaughan</author>
-    <creationDate>7-11-2026</creationDate>
+    <creationDate>9-11-2026</creationDate>
     <copyright>Copyright (C) 2026 Chris Vaughan. All rights reserved.</copyright>
     <license>GNU General Public License version 2 or later</license>
     <authorEmail>you@example.com</authorEmail>
     <authorUrl>https://example.com</authorUrl>
-    <version>1.0.88</version>
+    <version>1.0.109</version>
     <description>PLG_CONTENT_RA_LIBRARY_XML_DESCRIPTION</description>
 
     <!-- PSR‑4 mapping -->
@@ -27,6 +27,39 @@
     </services>
 
     <languages>
+        <language tag="en-GB">language/en-GB/plg_content_ra_library.ini</language>
         <language tag="en-GB">language/en-GB/plg_content_ra_library.sys.ini</language>
     </languages>
+
+    <config>
+        <fields name="params">
+            <fieldset name="basic">
+                <field
+                    name="specialist_tags"
+                    type="radio"
+                    layout="joomla.form.field.radio.switcher"
+                    label="PLG_CONTENT_RA_LIBRARY_SPECIALIST_TAGS_LABEL"
+                    description="PLG_CONTENT_RA_LIBRARY_SPECIALIST_TAGS_DESC"
+                    default="0">
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                <field
+                    name="specialist_tags_help"
+                    type="note"
+                    class="alert alert-info"
+                    label="PLG_CONTENT_RA_LIBRARY_SPECIALIST_HELP_LABEL"
+                    description="PLG_CONTENT_RA_LIBRARY_SPECIALIST_HELP_DESC"
+                    showon="specialist_tags:1" />
+            </fieldset>
+            <fieldset name="csv" label="PLG_CONTENT_RA_LIBRARY_CSV_TAB">
+                <field
+                    name="csv_help"
+                    type="note"
+                    class="alert alert-info"
+                    label="PLG_CONTENT_RA_LIBRARY_CSV_HELP_LABEL"
+                    description="PLG_CONTENT_RA_LIBRARY_CSV_HELP_DESC" />
+            </fieldset>
+        </fields>
+    </config>
 </extension>

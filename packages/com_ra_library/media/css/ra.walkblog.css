@@ -1,0 +1,283 @@
+/* Led walks blog: full walks, a row of panels (flexible swipe row or fixed columns) and a list of links */
+
+.ra-walkblog {
+    margin: 0 0 1.5em;
+}
+
+/* ---- section titles ---- */
+.ra-walkblog-heading {
+    margin: 1.2em 4px 0.4em;
+}
+
+/* ---- full walks ---- */
+.ra-walkblog-fullwalk {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    padding: 16px 20px;
+    margin: 8px 4px 1.5em;
+    overflow: hidden;
+}
+
+.ra-walkblog-fullwalk .ra-fw-title {
+    margin-top: 0;
+    margin-bottom: 0.2em;
+    font-size: 1.7em;
+    line-height: 1.2;
+}
+
+.ra-fw-date {
+    font-weight: bold;
+    margin-bottom: 0.6em;
+}
+
+.ra-fw-photo {
+    float: right;
+    width: 30%;
+    margin: 0 0 8px 16px;
+}
+
+.ra-fw-photo img {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    max-height: none;
+    height: auto;
+    float: none;
+    margin: 0;
+    border-radius: 4px;
+}
+
+.ra-fw-description,
+.ra-fw-notes,
+.ra-fw-place,
+.ra-fw-difficulty,
+.ra-fw-contact {
+    margin: 0.5em 0;
+}
+
+.ra-fw-showmap {
+    cursor: pointer;
+    border: 1px solid #b0b0b0;
+    background: #f5f5f5;
+    border-radius: 4px;
+    padding: 4px 12px;
+    margin: 0.5em 0.5em 0 0;
+}
+
+.ra-fw-showmap:hover {
+    background: #e8e8e8;
+}
+
+/* 'More details' is styled by the shared link-button mintcake classes; only spacing is set here */
+.ra-fw-showdetails {
+    margin: 0.5em 0.5em 0 0;
+}
+
+.ra-fw-mapholder .walkitem.map {
+    width: 100%;
+    min-height: 250px;
+    margin-top: 0.5em;
+    clear: both;
+}
+
+.ra-fw-more {
+    clear: both;
+}
+
+/* ---- panels ---- */
+.ra-walkblog-panels {
+    --ra-gap: 16px;
+    position: relative;
+    margin: 1.5em 0;
+}
+
+.ra-walkblog-track {
+    display: flex;
+    gap: var(--ra-gap);
+    /* padding leaves room for the panel shadows, which would otherwise be clipped by the scroll area */
+    padding: 8px 4px 18px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 4px;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .ra-walkblog-track {
+        scroll-behavior: smooth;
+    }
+}
+
+.ra-blog-panel {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    cursor: pointer;
+    scroll-snap-align: start;
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.ra-blog-panel:hover {
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+    transform: translateY(-2px);
+}
+
+.ra-blog-panel:focus-visible {
+    outline: 3px solid #1a73e8;
+    outline-offset: 2px;
+}
+
+.ra-panel-photo {
+    height: var(--ra-photo-h, 300px);
+    flex: 0 0 auto;
+    overflow: hidden;
+    background: #e8e8e8;
+}
+
+/* The photo keeps its shape and is cropped to fill the space.
+   max-height / max-width cancel the small-thumbnail limits in ramblerslibrary.css */
+.ra-panel-photo img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    object-fit: cover;
+    object-position: center;
+    float: none;
+    margin: 0;
+    border-radius: 0;
+}
+
+.ra-panel-body {
+    padding: 12px 14px 14px;
+}
+
+.ra-panel-title {
+    font-weight: bold;
+    font-size: 1.3em;
+    line-height: 1.25;
+    margin-bottom: 0.4em;
+}
+
+/* default picture for a walk without a photo */
+.ra-panel-photo-default {
+    background: #fff;
+}
+
+.ra-photo-logo img {
+    object-fit: contain;
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+.ra-panel-item {
+    margin: 0.2em 0;
+}
+
+.ra-panel-label {
+    font-weight: bold;
+}
+
+.ra-panel-description {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* flexible: as many panels as fit, each at least --ra-panel-min wide; the rest are reached by swiping */
+.ra-mode-flexible .ra-blog-panel {
+    flex: 0 0 var(--ra-panel-min, 280px);
+    max-width: 100%;
+}
+
+/* once blog.js has worked out how many fit, share the width out evenly */
+.ra-mode-flexible.ra-enhanced .ra-blog-panel {
+    flex: 0 0 calc((100% - (var(--ra-n, 1) - 1) * var(--ra-gap)) / var(--ra-n, 1));
+}
+
+/* fixed: a set number of columns, all panels shown, wrapping onto further rows */
+.ra-mode-fixed .ra-walkblog-track {
+    display: grid;
+    grid-template-columns: repeat(var(--ra-panel-cols, 3), minmax(0, 1fr));
+    overflow: visible;
+    scroll-snap-type: none;
+}
+
+@media (max-width: 700px) {
+    .ra-mode-fixed .ra-walkblog-track {
+        grid-template-columns: repeat(var(--ra-panel-cols-sm, 2), minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 480px) {
+    .ra-mode-fixed .ra-walkblog-track {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* previous / next buttons (added by blog.js) */
+.ra-walkblog-arrow {
+    position: absolute;
+    top: calc(50% - 10px);
+    transform: translateY(-50%);
+    z-index: 2;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: #fff;
+    color: #333;
+    font-size: 22px;
+    line-height: 38px;
+    text-align: center;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.ra-walkblog-arrow.prev {
+    left: -8px;
+}
+
+.ra-walkblog-arrow.next {
+    right: -8px;
+}
+
+.ra-walkblog-arrow:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
+.ra-walkblog-panels.ra-no-overflow .ra-walkblog-arrow {
+    display: none;
+}
+
+/* ---- links ---- */
+.ra-walkblog-links {
+    list-style: none;
+    margin: 1em 0 0;
+    padding: 0;
+}
+
+.ra-walkblog-link {
+    padding: 0.4em 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+/* on narrow screens the full walk photo goes full width above the text */
+@media (max-width: 600px) {
+    .ra-fw-photo {
+        float: none;
+        width: 100%;
+        margin: 0 0 8px;
+    }
+}

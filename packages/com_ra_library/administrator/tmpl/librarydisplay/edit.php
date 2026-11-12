@@ -90,6 +90,7 @@ $wa->useScript('com_ra_library.layoutcheck');
         switch ($displayOption) {
             case 'future_display':
             case "future_nextwalks":
+            case "future_blog":
             case "future_calendar":
             case "future_addtocalendar":
             case "future_table":
@@ -133,6 +134,40 @@ $wa->useScript('com_ra_library.layoutcheck');
                 echo $this->form->renderField('custom_title', 'options');
                 echo $this->form->renderField('css_file', 'options');
                 echo $this->form->renderField('js_file', 'options');
+                echo HTMLHelper::_('uitab.endTab');
+                break;
+            case "future_blog":
+                echo HTMLHelper::_('uitab.addTab', 'myTab', 'Custom', Text::_('Customise'));
+                echo '<div class="ra-form-section"><h3>Section titles</h3>';
+                echo $this->form->renderField('blog_title_full', 'options');
+                echo $this->form->renderField('blog_title_panel', 'options');
+                echo $this->form->renderField('blog_title_links', 'options');
+                echo $this->form->renderField('blog_title_level', 'options');
+                echo '</div><div class="ra-form-section"><h3>Full walks</h3>';
+                echo $this->form->renderField('blog_full_items', 'options');
+                echo $this->form->renderField('blog_sections', 'options');
+                echo $this->form->renderField('blog_full_map', 'options');
+                echo $this->form->renderField('custom_blog_full', 'options');
+                echo '</div><div class="ra-form-section"><h3>Panels</h3>';
+                echo $this->form->renderField('blog_panel_items', 'options');
+                echo $this->form->renderField('blog_panel_mode', 'options');
+                echo $this->form->renderField('blog_panel_minwidth', 'options');
+                echo $this->form->renderField('blog_panel_columns', 'options');
+                echo $this->form->renderField('blog_panel_image', 'options');
+                echo $this->form->renderField('blog_photo_height', 'options');
+                echo $this->form->renderField('blog_default_image', 'options');
+                echo $this->form->renderField('blog_panel_fields', 'options');
+                echo $this->form->renderField('blog_panel_labels', 'options');
+                echo $this->form->renderField('blog_panel_arrows', 'options');
+                echo $this->form->renderField('custom_blog_panel', 'options');
+                echo '</div><div class="ra-form-section"><h3>Links</h3>';
+                echo $this->form->renderField('blog_link_items', 'options');
+                echo $this->form->renderField('custom_blog_links', 'options');
+                echo '</div>';
+                echo $this->form->renderField('custom_title', 'options');
+                echo $this->form->renderField('css_file', 'options');
+                echo $this->form->renderField('walks_class', 'options');
+                echo $this->form->renderField('walk_class', 'options');
                 echo HTMLHelper::_('uitab.endTab');
                 break;
             case "future_calendar":

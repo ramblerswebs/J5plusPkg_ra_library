@@ -23,43 +23,17 @@ class Feed {
 
     public function __construct($options) {
 
-        // see if options is a string or object
-        // if string then find the parameters and set ip a feedoptions object
-        $isURL = false;
-
-        $okay = false;
-        if (is_string($options)) {
-            $this->options = new Feedoptions($options);
-            $isURL = true;
-            $okay = true;
-        }
-        if (is_object($options)) {
-            $this->options = $options;
-            $okay = true;
-        }
-        if (!$okay) {
+        // the options must be a Feedoptions object (a string of group codes is no longer accepted)
+        if (!($options instanceof Feedoptions)) {
             $app = Factory::getApplication();
             $app->enqueueMessage('Input to Feed is not valid', 'error');
             return;
         }
-        // now have a feed options object
+        $this->options = $options;
+
         $this->walks = new Walks(NULL);
 
         $this->options->getWalks($this->walks);
-        if ($isURL) {
-            $days = $this->options->getDays();
-            if ($days !== null) {
-                $this->filterDayofweek($days);
-            }
-            $distance = $this->options->getDistance();
-            if ($distance !== null) {
-                $this->filterWalksDistance($distance[0], $distance[1]);
-            }
-            $limit = $this->options->getLimit();
-            if ($limit !== null) {
-                $this->noWalks($limit);
-            }
-        }
         $this->setNewWalks(7);
         $this->setBookings();
     }
