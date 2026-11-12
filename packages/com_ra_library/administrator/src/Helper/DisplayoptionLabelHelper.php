@@ -41,6 +41,7 @@ class DisplayoptionLabelHelper {
 
         $disp['future_display'] = 'Led Walks: Display of led walks (tabbed layout)';
         $disp['future_nextwalks'] = 'Led Walks: Next walks';
+        $disp['future_blog'] = 'Led Walks: Blog (full walks, panels and links)';
         $disp['future_table'] = 'Led Walks: Table of led walks';
         $disp['future_list'] = 'Led Walks: List of led walks';
         $disp['future_map'] = 'Led Walks: Map of led walks';

@@ -14,15 +14,6 @@ class Feedoptions {
 
     private $sources = [];
 
-    public function __construct($value = null) {
-        // input can be a list of groups or a null string
-        if ($value === null) {
-            return;
-        }
-        $groups = strtoupper($value);
-        $this->addWalksManagerGroupWalks($groups);
-    }
-
     public function addWalksManagerGroupWalks($groups, $period = null) {
         $this->checkGroups($groups);
         $readwalks = true;

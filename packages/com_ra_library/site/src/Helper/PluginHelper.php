@@ -5,7 +5,10 @@ namespace Ramblers\Component\Ra_library\Site\Helper;
 \defined('_JEXEC') or die;
 
 use Ramblers\Component\Ra_library\Site\Library\Directory\DirList;
+use Ramblers\Component\Ra_library\Site\Library\Jsonwalks\Std\Walkcsv;
 use Ramblers\Component\Ra_library\Site\Library\Leaflet\Gpx\Map as GpxMap;
+use Ramblers\Component\Ra_library\Site\Library\Leaflet\Mapcompare;
+use Ramblers\Component\Ra_library\Site\Library\Leaflet\Mapplaces;
 use Joomla\CMS\Factory;
 
 class PluginHelper {
@@ -58,21 +61,29 @@ class PluginHelper {
      *
      *   {ra_library:documents folder="images/minutes" types="pdf,docx" sort="asc"}
      *   {ra_library:gpx file="images/routes/walk.gpx" colour="#782327" download="Public"}
+     *   {ra_library:walkcsv groups="ER05,ER06" text="Download walks CSV"}
      *
-     * @param   string  $text  The article / module text.
+     * and two that are not for general use, and only work when the plugin's
+     * "Specialist tags" setting is on ($specialist):
+     *
+     *   {ra_library:mapcompare latitude="52.89" longitude="-1.48" zoom="10"}
+     *   {ra_library:places}
+     *
+     * @param   string  $text        The article / module text.
+     * @param   bool    $specialist  True if the plugin allows the specialist tags.
      *
      * @return  string  The text with each valid tag replaced by its output
      *                  (or a short warning saying what is wrong with it).
      */
-    public static function replaceInlineTags(string $text): string {
+    public static function replaceInlineTags(string $text, bool $specialist = false): string {
         if (stripos($text, '{ra_library:') === false) {
             return $text;
         }
 
         return preg_replace_callback(
-                '#\{ra_library:(documents|gpxfolder|gpx|plot|csv|walks|calendar|addtocalendar|pastwalks|routes)((?:\s|&nbsp;|\xC2\xA0)[^{}]*)?\}#i',
-                static function (array $m): string {
-                    return self::renderInlineTag(strtolower($m[1]), self::parseAttributes($m[2] ?? ''));
+                '#\{ra_library:(documents|gpxfolder|gpx|plot|csv|walkcsv|walks|calendar|addtocalendar|pastwalks|routes|mapcompare|places)((?:\s|&nbsp;|\xC2\xA0)[^{}]*)?\}#i',
+                static function (array $m) use ($specialist): string {
+                    return self::renderInlineTag(strtolower($m[1]), self::parseAttributes($m[2] ?? ''), $specialist);
                 },
                 $text
         );
@@ -160,9 +171,22 @@ class PluginHelper {
         return [implode('/', $parts), ''];
     }
 
-    private static function renderInlineTag(string $name, array $attributes): string {
+    /** Tags that only work when the plugin's "Specialist tags" setting is on. */
+    private const SPECIALIST_TAGS = ['mapcompare', 'places'];
+
+    private static function renderInlineTag(string $name, array $attributes, bool $specialist = false): string {
+        if (!$specialist && \in_array($name, self::SPECIALIST_TAGS, true)) {
+            return self::warning($name, 'this tag is switched off. Turn on "Specialist tags" in the settings of the RA Library content plugin to use it.');
+        }
+
         try {
             switch ($name) {
+                case 'walkcsv':
+                    return self::renderWalkcsvTag($attributes);
+                case 'mapcompare':
+                    return self::renderMapcompareTag($attributes);
+                case 'places':
+                    return self::renderPlacesTag();
                 case 'gpx':
                     return self::renderGpxTag($attributes);
                 case 'gpxfolder':
@@ -304,18 +328,100 @@ class PluginHelper {
 
     /** {ra_library:plot latitude="52.891" longitude="-1.234" zoom="10" key="..."} */
     private static function renderPlotTag(array $attributes): string {
-        $number = static function (string $value, float $min, float $max, float $default): float {
-            return is_numeric($value) && $value >= $min && $value <= $max ? (float) $value : $default;
-        };
-
         $key = $attributes['key'] ?? '';
 
         return self::runDisplay('routes_plot', [
-                    'routes_latitude' => $number($attributes['latitude'] ?? $attributes['lat'] ?? '', -90, 90, 52.891),
-                    'routes_longitude' => $number($attributes['longitude'] ?? $attributes['lon'] ?? $attributes['long'] ?? '', -180, 180, -1.234),
-                    'routes_zoomlevel' => $number($attributes['zoom'] ?? '', 5, 13, 10),
+                    'routes_latitude' => self::number($attributes['latitude'] ?? $attributes['lat'] ?? '', -90, 90, 52.891),
+                    'routes_longitude' => self::number($attributes['longitude'] ?? $attributes['lon'] ?? $attributes['long'] ?? '', -180, 180, -1.234),
+                    'routes_zoomlevel' => self::number($attributes['zoom'] ?? '', 5, 13, 10),
                     'routes_smartroutingkey' => preg_match('/^[A-Za-z0-9._=-]{8,200}$/', $key) ? $key : '',
         ]);
+    }
+
+    /** A number typed in a tag, or the default if it is missing or out of range. */
+    private static function number(string $value, float $min, float $max, float $default): float {
+        return is_numeric($value) && $value >= $min && $value <= $max ? (float) $value : $default;
+    }
+
+    /**
+     * The group codes typed in a tag (groups="ER05, ER06" - commas, semicolons or spaces).
+     *
+     * @param   array   $attributes  The tag's attributes.
+     * @param   string  $pattern     A code must match this (after upper-casing).
+     *
+     * @return  array  [list of different valid codes, list of invalid codes]
+     */
+    private static function groupCodes(array $attributes, string $pattern): array {
+        $codes = [];
+        $bad = [];
+
+        foreach (preg_split('/[\s,;]+/', strtoupper($attributes['groups'] ?? $attributes['group'] ?? ''), -1, PREG_SPLIT_NO_EMPTY) as $code) {
+            if (preg_match($pattern, $code)) {
+                $codes[$code] = $code;
+            } else {
+                $bad[] = $code;
+            }
+        }
+
+        return [array_values($codes), $bad];
+    }
+
+    /**
+     * {ra_library:walkcsv groups="ER05,ER06" text="Download walks CSV"}
+     * A link that downloads the future walks and events of the groups as a CSV file.
+     * The file is made when the link is followed (WalkcsvController), not when the page is shown.
+     */
+    private static function renderWalkcsvTag(array $attributes): string {
+        // a 2 character code is an area, 4 a group
+        [$codes, $bad] = self::groupCodes($attributes, '/^[A-Z0-9]{2}([A-Z0-9]{2})?$/');
+
+        if ($bad) {
+            return self::warning('walkcsv', 'not a valid group code: ' . implode(', ', $bad));
+        }
+
+        if (!$codes) {
+            return self::warning('walkcsv', 'no group codes given, e.g. groups="ER05,ER06"');
+        }
+
+        if (count($codes) > 20) {
+            return self::warning('walkcsv', 'at most 20 group codes can be given');
+        }
+
+        $text = trim($attributes['text'] ?? '');
+        $text = $text !== '' ? mb_substr($text, 0, 80) : 'Download walks CSV';
+
+        // just the link: the editor normally wraps the tag in a paragraph already
+        return '<a class="ra-walkcsv link-button tiny button mintcake" href="'
+                . htmlspecialchars(Walkcsv::url(implode(',', $codes)), ENT_QUOTES, 'UTF-8') . '">'
+                . htmlspecialchars($text, ENT_QUOTES, 'UTF-8') . '</a>';
+    }
+
+    /** {ra_library:mapcompare latitude="52.89" longitude="-1.48" zoom="10"} - two maps that move together. */
+    private static function renderMapcompareTag(array $attributes): string {
+        $map = new Mapcompare();
+
+        if (isset($attributes['latitude']) || isset($attributes['lat']) || isset($attributes['longitude'])
+                || isset($attributes['lon']) || isset($attributes['long']) || isset($attributes['zoom'])) {
+            $map->setCenter(
+                    self::number($attributes['latitude'] ?? $attributes['lat'] ?? '', -90, 90, 52.89),
+                    self::number($attributes['longitude'] ?? $attributes['lon'] ?? $attributes['long'] ?? '', -180, 180, -1.48),
+                    (int) self::number($attributes['zoom'] ?? '', 3, 18, 10)
+            );
+        }
+
+        ob_start();
+        $map->display();
+
+        return ob_get_clean();
+    }
+
+    /** {ra_library:places} - every meeting / starting place (clustered). */
+    private static function renderPlacesTag(): string {
+        $map = new Mapplaces();
+        ob_start();
+        $map->display();
+
+        return ob_get_clean();
     }
 
     /** {ra_library:csv file="files/data/places.csv"} */
@@ -345,30 +451,52 @@ class PluginHelper {
      * {ra_library:walks groups="SO03,SO05"}            tabbed display of future walks
      * {ra_library:calendar groups="SO03" size="250"}   sidebar calendar
      * {ra_library:addtocalendar groups="SO03"}        'Add to calendar' button only
+     * Wellbeing walks (their groups are not in the normal group list):
+     *   {ra_library:walks groups="WB01,WB02" wellbeing="yes"}
+     *   {ra_library:walks wellbeing="yes" lat="52.89" long="-1.23" km="20"}   any wellbeing group in the area
+     *   (lat / long / km with no wellbeing attribute gives led walks and events in the area)
      */
     private static function renderWalksTag(array $attributes, string $displayOption): string {
         $name = ['future_calendar' => 'calendar', 'future_addtocalendar' => 'addtocalendar'][$displayOption] ?? 'walks';
-        $codes = [];
-        $bad = [];
+        $wellbeing = \in_array(strtolower(trim($attributes['wellbeing'] ?? '')), ['yes', 'true', '1', 'on'], true);
+        $inArea = isset($attributes['lat']) || isset($attributes['latitude']) || isset($attributes['long']) || isset($attributes['longitude']) || isset($attributes['km']);
 
-        foreach (preg_split('/[\s,;]+/', strtoupper($attributes['groups'] ?? $attributes['group'] ?? ''), -1, PREG_SPLIT_NO_EMPTY) as $code) {
-            if (preg_match('/^[A-Z0-9]{2,6}$/', $code)) {
-                $codes[$code] = (object) ['code' => $code];
-            } else {
-                $bad[] = $code;
+        if ($inArea) {
+            $lat = $attributes['lat'] ?? $attributes['latitude'] ?? '';
+            $long = $attributes['long'] ?? $attributes['longitude'] ?? '';
+            $km = $attributes['km'] ?? '';
+
+            if (!is_numeric($lat) || $lat < -90 || $lat > 90 || !is_numeric($long) || $long < -180 || $long > 180 || !is_numeric($km) || $km <= 0 || $km > 100) {
+                return self::warning($name, 'an area needs lat (-90 to 90), long (-180 to 180) and km (1 to 100), e.g. lat="52.89" long="-1.23" km="20"');
             }
-        }
 
-        if ($bad) {
-            return self::warning($name, 'not a valid group code: ' . implode(', ', $bad));
-        }
+            $source = (object) [
+                'load_type' => $wellbeing ? 'wmwellbeingarea' : 'wmarea',
+                'arealatitude' => (float) $lat, 'arealongitude' => (float) $long, 'arearadius' => (int) $km,
+            ];
+        } else {
+            [$list, $bad] = self::groupCodes($attributes, '/^[A-Z0-9]{2,6}$/');
+            $codes = [];
 
-        if (!$codes) {
-            return self::warning($name, 'no group codes given, e.g. groups="SO03,SO05"');
+            foreach ($list as $code) {
+                $codes[$code] = (object) ['code' => $code];
+            }
+
+            if ($bad) {
+                return self::warning($name, 'not a valid group code: ' . implode(', ', $bad));
+            }
+
+            if (!$codes) {
+                return self::warning($name, 'no group codes given, e.g. groups="SO03,SO05"');
+            }
+
+            $source = $wellbeing ?
+                    (object) ['load_type' => 'wmwellbeing', 'wellbeinggroups' => array_values($codes)] :
+                    (object) ['load_type' => 'wm', 'ramblersgroups' => array_values($codes)];
         }
 
         $options = [
-            'eventsources' => [(object) ['load_type' => 'wm', 'ramblersgroups' => array_values($codes)]],
+            'eventsources' => [$source],
             'filters' => [],
             'walks_class' => '', 'walk_class' => '',
             'custom_tabs' => [], 'custom_grades' => '', 'custom_list' => '', 'custom_calendar' => '',

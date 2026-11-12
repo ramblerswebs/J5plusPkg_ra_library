@@ -88,7 +88,9 @@ class Feedoptions {
             // Cache name for fetch by id
             $url = 'cache_ids_' . $this->ids;
         } else if ($this->groupCode !== null) {
-            $url = 'cache_' . strtoupper($this->groupCode);
+            // keep the item types (walks/events/wellbeing-walks) in the name, so a wellbeing
+            // source and a led walks source for the same codes never share a cache file
+            $url = $url . '_cache_' . strtoupper($this->groupCode);
             $url = str_replace(',', '', $url);
         } else {
             if ($this->latitude !== null) {

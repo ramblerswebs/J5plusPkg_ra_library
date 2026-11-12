@@ -1,5 +1,8 @@
 <?php
-namespace RamblerWebs\RamblersLibrary\jsonwalks;
+
+//namespace RamblerWebs\RamblersLibrary\jsonwalks;
+
+namespace Ramblers\Component\Ra_library\Site\Library\Jsonwalks;
 
 enum SourceOfWalk: string {
 

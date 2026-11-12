@@ -337,7 +337,7 @@ class LibrarydisplayModel extends AdminModel {
      * 
      */
     protected $targetDecodeFields = [
-        'documents_exts', 'ramblersgroups', 'draft_ragroups',
+        'documents_exts', 'ramblersgroups', 'wellbeinggroups', 'draft_ragroups',
         'draft_localgrades', 'custom_table', 'custom_title', 'keep_groups',
         'table_options', 'table_iconmarkers'];  // Add your unique fields
 

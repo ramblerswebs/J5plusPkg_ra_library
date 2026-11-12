@@ -30,7 +30,7 @@ ra.display.walksTabs = function (mapOptions, data) {
         listFormat: "{dowdd}{, ?meet}{, ?start}{, ?title}{, ?distance}{, ?contactname}{, ?telephone} ",
         gradesFormat: "{gradeimg}{dowddmm}{, ?title}{, ?distance}{, ?contactname}",
         calendarFormat: "{gradeimgMiddle}{title}{, ?distance}, {meetTime}{ or ?meetTime}{startTime} ",
-        withMonth: ["dowShortddmm", "dowddmm", "dowddmmyyyy"],
+        withMonth: ["dowShortddmm", "dowddmm", "dowddmmyyyy", "datebadge", "datebadgedow"],
         itemsPerPage: 20,
         options: null,
         displayBookingsTable: false

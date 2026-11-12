@@ -76,6 +76,10 @@ email: ruby.tuesday@ramblers-webs.org.uk
     border-left: 4px solid #dc3545;
     margin-left: 15px;
 }
+.feedcheckbox-item.wellbeing {
+    border-left: 4px solid #198754;
+    margin-left: 15px;
+}
 .feedcheckboxes-search {
     margin: 10px 0;
     display: flex;

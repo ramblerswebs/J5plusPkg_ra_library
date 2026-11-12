@@ -1,50 +1,50 @@
 <?php
+
 namespace Ramblers\Component\Ra_library\Site\Library\Jsonwalks\Std;
 
 /**
- * Description of WalksDisplay
- *    Create a csv file containing the walks and display a button to allow user to download csv file
- * 
+ * Walks and events as a CSV file (the columns are listed in header()).
+ *
+ * Nothing is written to the server. The CSV is built and sent when the download link is
+ * followed (see Controller/WalkcsvController.php); the link itself is made by
+ * {ra_library:walkcsv groups="..."} (see Helper/PluginHelper.php).
+ *
  * @author Chris Vaughan
- * 
  */
 // no direct access
 defined("_JEXEC") or die("Restricted access");
-use Ramblers\Component\Ra_library\Site\Library\Jsonwalks\Displaybase;
 
+class Walkcsv {
 
-class Walkcsv extends RJsonwalksDisplaybase {
+    /** Strip the html from descriptions. */
+    public bool $removeHTML = false;
 
-    private $filename;
-    private $buttonClass = "button-p1815";
-    public $removeHTML = false;
-    public $convertToASCII = false;
-
-    public function __construct($filename = "tmp/walks-download") {
-        parent::__construct();
-        $this->filename = $filename . (new DateTime())->format('YmdHis') . ".csv";
+    /**
+     * The link to the download. $groups is a list of group codes, e.g. "ER05,ER06".
+     */
+    public static function url(string $groups): string {
+        return \Joomla\CMS\Uri\Uri::root() . 'index.php?option=com_ra_library&task=walkcsv.walkcsv&groups=' . rawurlencode($groups);
     }
 
-    public function DisplayWalks($walks) {
-        $handle = fopen($this->filename, 'w'); //open file for writing 
-        If ($handle === false) {
-            die('Cannot open file:  ' . $this->filename);
-        } else {
-            $walks->sort(RJsonwalksWalk::SORT_DATE, RJsonwalksWalk::SORT_TIME, RJsonwalksWalk::SORT_DISTANCE);
-            $items = $walks->allWalks();
-            $fields = $this->csvHeader();
-
-            fputcsv($handle, $fields);
-            foreach ($items as $walk) {
-                $fields = $this->displayWalkCSV($walk);
-                fputcsv($handle, $fields);
-            }
-            fclose($handle);
-            $this->createButton();
+    /**
+     * Write the CSV for a Walks collection to an open stream.
+     *
+     * @param   resource  $handle  Where to write, e.g. fopen('php://output', 'w').
+     * @param   object    $walks   A Walks collection, already sorted as required.
+     *
+     * @return  int  The number of walks/events written.
+     */
+    public function write($handle, $walks): int {
+        fputcsv($handle, self::header());
+        $count = 0;
+        foreach ($walks->allWalks() as $walk) {
+            fputcsv($handle, $this->row($walk));
+            $count++;
         }
+        return $count;
     }
 
-    private function displayWalkCSV($walk) {
+    public function row($walk): array {
         $array = [];
         $array[] = $walk->getIntValue("basics", "walkDate")->format('d/m/Y');
         $array[] = $walk->getIntValue("basics", "title");
@@ -55,58 +55,45 @@ class Walkcsv extends RJsonwalksDisplaybase {
             $array[] = $description;
         }
         $array[] = $walk->getIntValue("basics", "additionalNotes");
-        $array[] = ""; // link
+        $array[] = ""; // Website Link
         $array[] = $walk->getIntValue("contacts", "contactName");
         $array[] = $walk->getIntValue("walks", "shape");
+
         $array[] = $walk->getIntValue("start", "textTime");
         $array[] = $walk->getIntValue("start", "lat/long");
-        $array[] = ""; // latitude/longitude
-        $array[] = "";
+        $array[] = ""; // Starting postcode
+        $array[] = ""; // Starting gridref
         $array[] = $walk->getWalkValue("{startPlace}");
 
         $array[] = $walk->getIntValue("meeting", "textTime");
         $array[] = $walk->getIntValue("meeting", "lat/long");
-        $array[] = ""; // latitude/longitude
-        $array[] = "";
+        $array[] = ""; // Meeting postcode
+        $array[] = ""; // Meeting gridref
         $array[] = $walk->getWalkValue("{meetPlace}");
 
-        $array[] = $walk->getintValue("finish", "textTime");
+        $array[] = $walk->getIntValue("finish", "textTime");
         $array[] = $walk->getIntValue("finish", "lat/long");
-        $array[] = ""; // latitude/longitude
-        $array[] = "";
+        $array[] = ""; // Finishing postcode
+        $array[] = ""; // Finishing gridref
         $array[] = $walk->getWalkValue("{finishPlace}");
 
-        $array[] = $walk->getintValue("walks", "nationalGrade");
-        $array[] = $walk->getintValue("walks", "distanceMiles");
-        $array[] = "";
+        $array[] = $walk->getIntValue("walks", "nationalGrade");
+        $array[] = $walk->getIntValue("walks", "distanceKm");
+        $array[] = $walk->getIntValue("walks", "distanceMiles");
+        $array[] = $walk->getIntValue("walks", "ascentMetres");
+        $array[] = $walk->getIntValue("walks", "ascentFeet");
 
-        $array[] = $walk->getIntValue("walks", "ascent");
-        $array[] = "";
-        $flags = $this->flags();
-        $set = $walk->flagsExists($flags);
-        foreach ($set as $item) {
-            if ($item) {
-                $array[] = "True";
-            } else {
-                $array[] = "False";
-            }
+        foreach ($walk->flagsExists(self::flags()) as $set) {
+            $array[] = $set ? "True" : "False";
         }
-
-
-
         return $array;
     }
 
-    private function csvHeader() {
+    public static function header(): array {
         return ["Date", "Title", "Description", "Additional details", "Website Link", "Walk leaders", "Linear or Circular", "Start time", "Starting location", "Starting postcode", "Starting gridref", "Starting location details", "Meeting time", "Meeting location", "Meeting postcode", "Meeting gridref", "Meeting location details", "Est finish time", "Finishing location", "Finishing postcode", "Finishing gridref", "Finishing location details", "Difficulty", "Distance km", "Distance miles", "Ascent metres", "Ascent feet", "Dog friendly", "Introductory walk", "No stiles", "Family-friendly", "Wheelchair accessible", "Accessible by public transport", "Car parking available", "Car sharing available", "Coach trip", "Refreshments available (Pub/cafe)", "Toilets available"];
     }
 
-    private function flags() {
+    private static function flags(): array {
         return ["Dog friendly", "Introductory walk", "No stiles", "Family-friendly", "Wheelchair accessible", "Accessible by public transport", "Car parking available", "Car sharing available", "Coach trip", "Refreshments available (Pub/cafe)", "Toilets available"];
     }
-
-    private function createButton() {
-        echo '<a href="' . $this->filename . '" class="link-button ' . $this->buttonClass . '">Download walks CSV</a>';
-    }
-
 }

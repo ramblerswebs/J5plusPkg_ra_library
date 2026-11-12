@@ -54,6 +54,7 @@ class FeedcheckboxesField extends ListField {
                 $class = match ((string) ($item['scope'] ?? '')) {
                     'A' => 'area',
                     'G' => 'group',
+                    'W' => 'wellbeing',
                     default => ''
                 };
 

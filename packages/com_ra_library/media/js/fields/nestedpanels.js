@@ -71,6 +71,15 @@ function initNestedPanels(container) {
             row.appendChild(heading);
         }
 
+        // Only the row that holds the selectable options (the lowest level
+        // currently shown) gets the prompt, so it sits next to those panels.
+        if (nodes.some(node => node.type === 'option')) {
+            const hint = document.createElement('div');
+            hint.className = 'nestedpanels-row-hint';
+            hint.textContent = 'Select one of these options';
+            row.appendChild(hint);
+        }
+
         const panelsWrap = document.createElement('div');
         panelsWrap.className = 'nestedpanels-row-panels';
 

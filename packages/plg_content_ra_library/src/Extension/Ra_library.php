@@ -26,7 +26,10 @@ final class Ra_library extends CMSPlugin implements SubscriberInterface {
         $context = $event->getContext();
         $item = $event->getItem();
 
-        if ($this->getApplication()->isClient('api') || !isset($item->text)) {
+        // Only render on the public site. Saving an article in the back end makes Smart Search
+        // (com_finder.*) run the content plugins inside the administrator application, where
+        // relative folder/file paths do not resolve and feeds/statistics files would be hit needlessly.
+        if (!$this->getApplication()->isClient('site') || str_starts_with((string) $context, 'com_finder.') || !isset($item->text)) {
             return;
         }
 
@@ -35,7 +38,8 @@ final class Ra_library extends CMSPlugin implements SubscriberInterface {
         // Self-contained tags that carry their own settings, no Library Display needed:
         //   {ra_library:documents folder="images/minutes" types="pdf,docx" sort="asc"}
         //   {ra_library:gpx file="images/routes/walk.gpx" colour="#782327" download="Public"}
-        $text = PluginHelper::replaceInlineTags($text);
+        // 'Specialist tags' (map compare, places) are off unless the plugin setting turns them on
+        $text = PluginHelper::replaceInlineTags($text, (bool) $this->params->get('specialist_tags', 0));
         $item->text = $text;
 
         // Log that we are in onContentPrepare (for debugging)
@@ -57,7 +61,14 @@ final class Ra_library extends CMSPlugin implements SubscriberInterface {
             $display = $this->loadDisplay($displayId);
 
             if (!$display) {
-                $html = "<p class='alert-error'><b>ERROR: RA Library Display not found ID:" . $displayId . "</b></p>";
+                $message = "RA Library Display not found ID:" . $displayId;
+                $html = "<p class='alert-error'><b>ERROR: " . $message . "</b></p>";
+                $this->getApplication()->enqueueMessage($message, 'error');
+            } elseif ((int) $display->state !== 1) {
+                // exists, but is unpublished, archived or trashed, so it must not be shown
+                $message = "RA Library Display is not published ID:" . $displayId;
+                $html = "<p class='alert-error'><b>ERROR: " . $message . "</b></p>";
+                $this->getApplication()->enqueueMessage($message, 'error');
             } else {
                 $html = PluginHelper::renderView($viewName, $display);
             }
