@@ -37,7 +37,8 @@ echo "<div class='mod-nextwalks-content'>";
 $codes = array_column(json_decode($groupsString), 'code');
 $groups = implode(",", $codes);
 
-$options = new Feedoptions($groups);
+$options = new Feedoptions();
+$options->addWalksManagerGroupWalks($groups);
 $feed = new Feed($options);
 $feed->limitNumberWalks($limit);
 $feed->setNewWalks($newEvents);

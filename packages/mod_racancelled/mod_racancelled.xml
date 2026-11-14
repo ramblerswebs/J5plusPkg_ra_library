@@ -7,7 +7,7 @@
     <license>This extension is released under the GNU/GPL License</license>
     <authorEmail>webmaster@ramblers-webs.org.uk</authorEmail>
     <authorUrl>www.ramblers-webs.org.uk</authorUrl>
-    <version>1.0.88</version>
+    <version>1.0.111</version>
     <description>This module displays cancelled walks (Joomla 5/6 compatible)</description>
 
     <!-- PSR-4 namespace declaration required by Joomla 5/6 -->
