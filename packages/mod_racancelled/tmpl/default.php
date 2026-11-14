@@ -36,7 +36,8 @@ $groupsArray = array_column($groupsPairs, 'code');
 $groupsCSV = implode(",", $groupsArray);
 $diagnostics = (int) $params->get('diagnostics', 0);
 
-$options = new Feedoptions($groupsCSV);
+$options = new Feedoptions();
+$options->addWalksManagerGroupWalks($groupsCSV);
 $feed = new Feed($options);
 $display = new Cancelledwalks();
 

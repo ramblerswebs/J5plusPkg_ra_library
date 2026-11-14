@@ -7,7 +7,7 @@
     <license>GNU General Public License version 2 or later</license>
     <authorEmail>you@example.com</authorEmail>
     <authorUrl>https://example.com</authorUrl>
-    <version>1.0.109</version>
+    <version>1.0.111</version>
     <description>PLG_CONTENT_RA_LIBRARY_XML_DESCRIPTION</description>
 
     <!-- PSR‑4 mapping -->
